@@ -1,0 +1,30 @@
+{
+  "name": "super-transcriber-cdk",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:lambdas": "node scripts/build-lambdas.mjs",
+    "synth": "cdk synth",
+    "deploy": "cdk deploy --all --require-approval never"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.901.0",
+    "@aws-sdk/client-s3": "^3.901.0",
+    "@aws-sdk/client-transcribe": "^3.901.0",
+    "@aws-sdk/lib-dynamodb": "^3.901.0",
+    "@aws-sdk/s3-request-presigner": "^3.901.0",
+    "aws-cdk-lib": "^2.196.0",
+    "constructs": "^10.4.2",
+    "source-map-support": "^0.5.21",
+    "ulid": "^3.0.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.152",
+    "@types/node": "^22.15.3",
+    "aws-cdk": "^2.1018.0",
+    "esbuild": "^0.25.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
