@@ -70,6 +70,22 @@ body::before {
   background: rgba(10, 10, 15, 0.72);
 }
 
+.nav-wordmark {
+  @apply text-[15px] font-semibold tracking-[-0.03em] text-foreground;
+}
+
+.nav-link-premium {
+  @apply text-[12px] font-semibold uppercase tracking-[0.14em] text-[rgba(240,237,232,0.7)] transition-colors;
+}
+
+.nav-link-premium:hover {
+  @apply text-foreground;
+}
+
+.nav-meta {
+  @apply text-[12px] font-medium uppercase tracking-[0.12em] text-[rgba(240,237,232,0.52)];
+}
+
 .glass-line {
   position: relative;
 }

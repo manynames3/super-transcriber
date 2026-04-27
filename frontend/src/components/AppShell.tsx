@@ -32,11 +32,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             <BrandMark />
           </Link>
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            <Link className="hidden hover:text-foreground md:inline-flex" to="/dashboard">
+            <Link className="nav-link-premium hidden md:inline-flex" to="/dashboard">
               Dashboard
             </Link>
             {session?.email ? (
-              <span className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs md:inline-flex">
+              <span className="nav-meta hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 md:inline-flex">
                 {session.email}
               </span>
             ) : null}

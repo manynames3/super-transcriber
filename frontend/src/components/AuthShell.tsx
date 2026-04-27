@@ -17,7 +17,7 @@ export function AuthShell({ children, eyebrow, subtitle, title }: AuthShellProps
           <Link to="/login">
             <BrandMark />
           </Link>
-          <div className="text-sm text-muted-foreground">Private AWS transcription workspace</div>
+          <div className="nav-meta">Private AWS transcription workspace</div>
         </div>
       </header>
       <div className="mx-auto grid w-full max-w-7xl flex-1 gap-12 px-6 py-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">

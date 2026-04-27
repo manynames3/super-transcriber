@@ -150,19 +150,19 @@ export function LandingPage() {
           <a href="#top">
             <BrandMark />
           </a>
-          <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
-            <a className="hover:text-foreground" href="#how-it-works">
+          <nav className="hidden items-center gap-8 md:flex">
+            <a className="nav-link-premium" href="#how-it-works">
               How it works
             </a>
-            <a className="hover:text-foreground" href="#pricing">
+            <a className="nav-link-premium" href="#pricing">
               Pricing
             </a>
-            <a className="hover:text-foreground" href="#faq">
+            <a className="nav-link-premium" href="#faq">
               FAQ
             </a>
           </nav>
           <div className="flex items-center gap-3">
-            <Link className="text-sm text-muted-foreground hover:text-foreground" to={session ? "/dashboard" : "/login"}>
+            <Link className="nav-link-premium" to={session ? "/dashboard" : "/login"}>
               {session ? "Dashboard" : "Sign in"}
             </Link>
             <Link className={buttonVariants()} to={ctaHref}>
