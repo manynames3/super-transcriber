@@ -146,7 +146,7 @@ export function LandingPage() {
   return (
     <div className="app-shell">
       <header className="chrome-nav">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-6">
+        <div className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between gap-4 px-6 md:h-16">
           <a href="#top">
             <BrandMark />
           </a>
@@ -173,84 +173,86 @@ export function LandingPage() {
       </header>
 
       <main className="relative z-10" id="top">
-        <section className="mx-auto flex min-h-[88vh] max-w-7xl flex-col items-center justify-center px-6 pb-16 pt-24 text-center">
-          <div className="hero-kicker mb-8">
-            <span className="hero-dot" />
-            Instant audio transcription
-          </div>
-          <h1 className="hero-title max-w-5xl">
-            Your words,
-            <br />
-            <em>on the page</em>
-            <br />
-            in seconds.
-          </h1>
-          <p className="hero-copy mt-7 text-center">
-            Upload an MP3. Get a clean, speaker-labeled transcript you can copy, download, or share, powered by Amazon&apos;s speech stack and packaged like a real product.
-          </p>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Link className={cn(buttonVariants({ size: "lg" }), "px-8")} to={ctaHref}>
-              {session ? "Open dashboard" : "Start for free"} →
-            </Link>
-            <a className={cn(buttonVariants({ size: "lg", variant: "outline" }), "px-8")} href="#how-it-works">
-              See how it works
-            </a>
-          </div>
-          <div className="mt-14 flex flex-wrap items-center justify-center gap-5 text-xs text-muted-foreground md:text-sm">
-            <span>No credit card required</span>
-            <div className="h-4 w-px bg-white/15" />
-            <span>3 free transcripts/month</span>
-            <div className="h-4 w-px bg-white/15" />
-            <span>95%+ accuracy on clear audio</span>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-5xl px-6 pb-24">
-          <div className="panel glass-line rounded-[24px] p-6 md:p-8">
-            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[rgba(212,168,67,0.2)] bg-[rgba(212,168,67,0.1)] text-primary">
-                  <FileAudio2 className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-foreground">interview_final.mp3</div>
-                  <div className="text-xs text-muted-foreground">4:32 · 8.2 MB</div>
-                </div>
+        <section className="mx-auto max-w-7xl px-6 pb-14 pt-6 md:pb-16 md:pt-8">
+          <div className="grid items-center gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:gap-8">
+            <div className="text-center lg:text-left">
+              <div className="hero-kicker mb-4">
+                <span className="hero-dot" />
+                Instant audio transcription
               </div>
-              <div className="inline-flex items-center gap-2 text-sm font-medium text-emerald-300">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                Completed
+              <h1 className="hero-title max-w-4xl lg:max-w-none">
+                Your words,
+                <br />
+                <em>on the page</em>
+                <br />
+                in seconds.
+              </h1>
+              <p className="hero-copy mt-5 text-center lg:text-left">
+                Upload an MP3. Get a clean, speaker-labeled transcript you can copy, download, or share, powered by Amazon&apos;s speech stack and packaged like a real product.
+              </p>
+              <div className="mt-7 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
+                <Link className={cn(buttonVariants({ size: "lg" }), "px-8")} to={ctaHref}>
+                  {session ? "Open dashboard" : "Start for free"} →
+                </Link>
+                <a className={cn(buttonVariants({ size: "lg", variant: "outline" }), "px-8")} href="#how-it-works">
+                  See how it works
+                </a>
+              </div>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground md:text-sm lg:justify-start">
+                <span>No credit card required</span>
+                <div className="hidden h-4 w-px bg-white/15 sm:block" />
+                <span>3 free transcripts/month</span>
+                <div className="hidden h-4 w-px bg-white/15 sm:block" />
+                <span>95%+ accuracy on clear audio</span>
               </div>
             </div>
 
-            <div className="mb-6 flex h-14 items-center gap-1">
-              {waveformHeights.map((height, index) => (
-                <div
-                  className={cn(
-                    "flex-1 rounded-sm bg-white/8",
-                    index < 14 && "bg-primary shadow-[0_0_18px_rgba(212,168,67,0.18)]",
-                  )}
-                  key={index}
-                  style={{ height: `${height}%` }}
-                />
-              ))}
-            </div>
+            <div className="panel glass-line rounded-[24px] p-5 md:p-7">
+              <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[rgba(212,168,67,0.2)] bg-[rgba(212,168,67,0.1)] text-primary">
+                    <FileAudio2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-foreground">interview_final.mp3</div>
+                    <div className="text-xs text-muted-foreground">4:32 · 8.2 MB</div>
+                  </div>
+                </div>
+                <div className="inline-flex items-center gap-2 text-sm font-medium text-emerald-300">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                  Completed
+                </div>
+              </div>
 
-            <div className="rounded-[18px] border border-white/8 bg-[rgba(28,28,38,0.9)] p-5 font-mono text-sm leading-7 text-muted-foreground">
-              <div className="mb-3 text-[11px] uppercase tracking-[0.14em] text-[rgba(255,255,255,0.32)]">Transcript</div>
-              <p>
-                <span className="text-primary">[Speaker 1]:</span> The key insight from last quarter was that retention improved by nearly 40% once we simplified the onboarding flow.
-              </p>
-              <p className="mt-4">
-                <span className="text-[rgb(154,139,255)]">[Speaker 2]:</span> Right, and that maps directly to what we saw in the cohort analysis. Users who completed setup in under three minutes had double the 30-day retention.
-              </p>
-            </div>
+              <div className="mb-4 flex h-12 items-center gap-1 md:h-14">
+                {waveformHeights.map((height, index) => (
+                  <div
+                    className={cn(
+                      "flex-1 rounded-sm bg-white/8",
+                      index < 14 && "bg-primary shadow-[0_0_18px_rgba(212,168,67,0.18)]",
+                    )}
+                    key={index}
+                    style={{ height: `${height}%` }}
+                  />
+                ))}
+              </div>
 
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              <MarketingAction icon={<Copy className="h-3.5 w-3.5" />} label="Copy text" />
-              <MarketingAction icon={<Download className="h-3.5 w-3.5" />} label="Download .txt" />
-              <MarketingAction icon={<FileCode2 className="h-3.5 w-3.5" />} label="Download .json" />
-              <span className="ml-auto text-xs text-muted-foreground">841 words · 4 min read</span>
+              <div className="rounded-[18px] border border-white/8 bg-[rgba(28,28,38,0.9)] p-4 font-mono text-[13px] leading-7 text-muted-foreground md:p-5 md:text-sm">
+                <div className="mb-3 text-[11px] uppercase tracking-[0.14em] text-[rgba(255,255,255,0.32)]">Transcript</div>
+                <p>
+                  <span className="text-primary">[Speaker 1]:</span> The key insight from last quarter was that retention improved by nearly 40% once we simplified the onboarding flow.
+                </p>
+                <p className="mt-4">
+                  <span className="text-[rgb(154,139,255)]">[Speaker 2]:</span> Right, and that maps directly to what we saw in the cohort analysis. Users who completed setup in under three minutes had double the 30-day retention.
+                </p>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <MarketingAction icon={<Copy className="h-3.5 w-3.5" />} label="Copy text" />
+                <MarketingAction icon={<Download className="h-3.5 w-3.5" />} label="Download .txt" />
+                <MarketingAction icon={<FileCode2 className="h-3.5 w-3.5" />} label="Download .json" />
+                <span className="ml-auto text-xs text-muted-foreground max-md:w-full max-md:pt-2">841 words · 4 min read</span>
+              </div>
             </div>
           </div>
         </section>
