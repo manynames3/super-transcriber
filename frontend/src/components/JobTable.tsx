@@ -28,8 +28,8 @@ export function JobTable({
   sortKey,
 }: JobTableProps) {
   return (
-    <Card>
-      <CardHeader className="border-b border-border/70 bg-white/50">
+    <Card className="glass-line">
+      <CardHeader className="border-b border-white/8 bg-transparent">
         <CardTitle>Job history</CardTitle>
         <CardDescription>Sorted client-side with cursor pagination from DynamoDB.</CardDescription>
       </CardHeader>
@@ -77,7 +77,7 @@ export function JobTable({
                   <TableCell>
                     <div className="flex justify-end gap-2">
                       <Link
-                        className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-border bg-white/80 px-4 text-sm font-medium text-foreground hover:bg-secondary/60"
+                        className="inline-flex h-9 items-center justify-center gap-2 rounded-[10px] border border-white/15 bg-white/[0.02] px-4 text-sm font-medium text-foreground hover:bg-white/[0.06] hover:border-white/25"
                         to={`/transcript/${job.jobId}`}
                       >
                         <ExternalLink className="h-4 w-4" />
@@ -124,7 +124,7 @@ function SortableHead({
 }) {
   return (
     <TableHead>
-      <button className="inline-flex items-center gap-2" onClick={onClick} type="button">
+      <button className="inline-flex items-center gap-2 hover:text-foreground" onClick={onClick} type="button">
         {children}
         <ArrowDownUp className={`h-4 w-4 ${active ? "opacity-100" : "opacity-40"}`} />
         {active ? <span className="text-xs uppercase">{direction}</span> : null}

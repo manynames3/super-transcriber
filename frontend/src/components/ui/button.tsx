@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 
 export const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 rounded-[10px] text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
   {
     defaultVariants: {
       size: "default",
@@ -16,10 +16,12 @@ export const buttonVariants = cva(
         sm: "h-9 px-4 text-sm",
       },
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        ghost: "bg-transparent text-foreground hover:bg-foreground/5",
-        outline: "border border-border bg-white/80 text-foreground hover:bg-secondary/60",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        default:
+          "bg-primary text-primary-foreground shadow-[0_0_36px_rgba(212,168,67,0.18)] hover:-translate-y-0.5 hover:bg-[#e0b34e]",
+        ghost: "bg-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground",
+        outline:
+          "border border-white/15 bg-[rgba(255,255,255,0.02)] text-foreground hover:bg-white/6 hover:border-white/25",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-[rgba(255,255,255,0.1)]",
       },
     },
   },

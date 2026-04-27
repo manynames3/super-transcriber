@@ -45,8 +45,8 @@ export function TranscriptViewer({
   };
 
   return (
-    <Card>
-      <CardHeader className="border-b border-border/70 bg-white/50">
+    <Card className="glass-line">
+      <CardHeader className="border-b border-white/8 bg-transparent">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <CardTitle>Transcript</CardTitle>
@@ -87,12 +87,12 @@ export function TranscriptViewer({
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-6">
-        <div className="max-h-[60vh] overflow-y-auto rounded-[24px] border border-border/70 bg-stone-950 p-5 font-mono text-sm leading-7 text-stone-100 whitespace-pre-wrap">
+        <div className="max-h-[60vh] overflow-y-auto rounded-[24px] border border-white/8 bg-[rgba(10,10,15,0.92)] p-5 font-mono text-sm leading-7 text-stone-100 whitespace-pre-wrap">
           {currentChunk}
         </div>
 
         {chunks.length > 1 ? (
-          <div className="flex items-center justify-between rounded-[20px] border border-border/70 bg-white/60 px-4 py-3 text-sm">
+          <div className="panel-soft flex items-center justify-between rounded-[20px] px-4 py-3 text-sm">
             <span>
               Chunk {pageIndex + 1} of {chunks.length}
             </span>
@@ -112,7 +112,7 @@ export function TranscriptViewer({
           </div>
         ) : null}
 
-        <div className="grid gap-3 rounded-[24px] border border-border/70 bg-white/70 p-5 text-sm md:grid-cols-3">
+        <div className="grid gap-3 rounded-[24px] border border-white/8 bg-[rgba(28,28,38,0.88)] p-5 text-sm md:grid-cols-3">
           <Stat label="Word count" value={words.toLocaleString()} />
           <Stat label="Character count" value={characters.toLocaleString()} />
           <Stat label="Estimated read time" value={`${readTimeMinutes} min`} />
@@ -126,7 +126,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-muted-foreground">{label}</p>
-      <p className="mt-1 text-lg font-semibold">{value}</p>
+      <p className="mt-1 text-lg font-medium text-foreground">{value}</p>
     </div>
   );
 }

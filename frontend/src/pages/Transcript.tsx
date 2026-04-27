@@ -1,6 +1,7 @@
 import { ArrowLeft, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
+import { AppShell } from "../components/AppShell";
 import { apiRequest } from "../lib/api";
 import { useAuthStore } from "../store/authStore";
 import type { JobDetail } from "../types";
@@ -140,58 +141,60 @@ export function TranscriptPage() {
   };
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <Link className="inline-flex items-center gap-2 text-sm font-medium text-primary" to="/dashboard">
-            <ArrowLeft className="h-4 w-4" />
-            Back to dashboard
-          </Link>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight">Transcript job {jobId}</h1>
+    <AppShell>
+      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-3">
+            <Link className="inline-flex items-center gap-2 text-sm font-medium text-primary" to="/dashboard">
+              <ArrowLeft className="h-4 w-4" />
+              Back to dashboard
+            </Link>
+            <h1 className="hero-title text-4xl md:text-6xl">Transcript job <em>{jobId}</em></h1>
+          </div>
+          {job ? <StatusBadge status={job.status} /> : null}
         </div>
-        {job ? <StatusBadge status={job.status} /> : null}
-      </div>
 
-      <Card>
-        <CardHeader className="border-b border-border/70 bg-white/50">
-          <CardTitle>Processing status</CardTitle>
-          <CardDescription>Polling starts at 3 seconds and backs off to a maximum 30-second interval.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 pt-6">
-          {job && canPoll ? (
-            <div className="flex items-center gap-3 rounded-[24px] border border-border/70 bg-white/70 p-4">
-              <Spinner className="h-5 w-5" />
-              <div>
-                <p className="font-medium">{statusMessage}</p>
-                <p className="text-sm text-muted-foreground">Waiting for a terminal Transcribe status.</p>
+        <Card className="glass-line">
+          <CardHeader className="border-b border-white/8 bg-transparent">
+            <CardTitle>Processing status</CardTitle>
+            <CardDescription>Polling starts at 3 seconds and backs off to a maximum 30-second interval.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-6">
+            {job && canPoll ? (
+              <div className="panel-soft flex items-center gap-3 rounded-[24px] p-4">
+                <Spinner className="h-5 w-5" />
+                <div>
+                  <p className="font-medium text-foreground">{statusMessage}</p>
+                  <p className="text-sm text-muted-foreground">Waiting for a terminal Transcribe status.</p>
+                </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
 
-          {job?.status === "FAILED" ? (
-            <div className="rounded-[24px] border border-red-200 bg-red-50 p-4">
-              <p className="font-medium text-red-800">Transcription failed</p>
-              <p className="mt-1 text-sm text-red-700">{job.failureReason || "Transcribe did not return a failure reason."}</p>
-              <Button className="mt-4" disabled={isRetrying} onClick={() => void handleRetry()} variant="outline">
-                <RotateCcw className="h-4 w-4" />
-                {isRetrying ? "Retrying" : "Try Again"}
-              </Button>
-            </div>
-          ) : null}
+            {job?.status === "FAILED" ? (
+              <div className="rounded-[24px] border border-red-500/20 bg-[rgba(190,58,58,0.08)] p-4">
+                <p className="font-medium text-red-200">Transcription failed</p>
+                <p className="mt-1 text-sm text-red-300">{job.failureReason || "Transcribe did not return a failure reason."}</p>
+                <Button className="mt-4" disabled={isRetrying} onClick={() => void handleRetry()} variant="outline">
+                  <RotateCcw className="h-4 w-4" />
+                  {isRetrying ? "Retrying" : "Try Again"}
+                </Button>
+              </div>
+            ) : null}
 
-          {pollingTimedOut ? (
-            <div className="rounded-[24px] border border-amber-200 bg-amber-50 p-4 text-amber-900">
-              Polling stopped after 15 minutes without a terminal status. Refresh later or return to the dashboard.
-            </div>
-          ) : null}
+            {pollingTimedOut ? (
+              <div className="rounded-[24px] border border-primary/20 bg-[rgba(212,168,67,0.08)] p-4 text-primary">
+                Polling stopped after 15 minutes without a terminal status. Refresh later or return to the dashboard.
+              </div>
+            ) : null}
 
-          {error ? <p className="text-sm text-red-700">{error}</p> : null}
-        </CardContent>
-      </Card>
+            {error ? <p className="text-sm text-red-300">{error}</p> : null}
+          </CardContent>
+        </Card>
 
-      {job?.status === "COMPLETED" && job.transcriptText && job.rawTranscript ? (
-        <TranscriptViewer jobId={job.jobId} rawTranscript={job.rawTranscript} transcriptText={job.transcriptText} />
-      ) : null}
-    </div>
+        {job?.status === "COMPLETED" && job.transcriptText && job.rawTranscript ? (
+          <TranscriptViewer jobId={job.jobId} rawTranscript={job.rawTranscript} transcriptText={job.transcriptText} />
+        ) : null}
+      </div>
+    </AppShell>
   );
 }

@@ -1,6 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
+import { AuthShell } from "../components/AuthShell";
 import { register } from "../lib/cognito";
 import { useAuthStore } from "../store/authStore";
 import { Button } from "../components/ui/button";
@@ -44,8 +45,16 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6 py-12">
-      <Card className="w-full max-w-md">
+    <AuthShell
+      eyebrow="Create workspace"
+      subtitle="Register once, verify your email, and keep the upload and transcript workflow behind Cognito without changing the direct-to-S3 flow."
+      title={
+        <>
+          Create your <em>private</em> transcription desk.
+        </>
+      }
+    >
+      <Card className="mx-auto w-full max-w-md">
         <CardHeader>
           <CardTitle>Create account</CardTitle>
           <CardDescription>Cognito will email a 6-digit verification code after sign-up.</CardDescription>
@@ -74,7 +83,7 @@ export function RegisterPage() {
                 value={confirmPassword}
               />
             </div>
-            {error ? <p className="text-sm text-red-700">{error}</p> : null}
+            {error ? <p className="text-sm text-red-300">{error}</p> : null}
             <Button className="w-full" disabled={isSubmitting} size="lg" type="submit">
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {isSubmitting ? "Creating account" : "Register"}
@@ -88,6 +97,6 @@ export function RegisterPage() {
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthShell>
   );
 }

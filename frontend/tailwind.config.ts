@@ -29,8 +29,9 @@ export default {
         "secondary-foreground": "hsl(var(--secondary-foreground))",
       },
       fontFamily: {
-        mono: ["'IBM Plex Mono'", "monospace"],
-        sans: ["'Space Grotesk'", "sans-serif"],
+        mono: ["'Geist Mono'", "monospace"],
+        sans: ["'Geist'", "sans-serif"],
+        serif: ["'Instrument Serif'", "serif"],
       },
     },
   },

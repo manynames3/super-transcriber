@@ -1,6 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
+import { AuthShell } from "../components/AuthShell";
 import { login } from "../lib/cognito";
 import { useAuthStore } from "../store/authStore";
 import { Button } from "../components/ui/button";
@@ -38,8 +39,16 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6 py-12">
-      <Card className="w-full max-w-md">
+    <AuthShell
+      eyebrow="Secure login"
+      subtitle="Sign in with your Cognito account to upload MP3s, track job progress, and export diarized transcripts in the same premium workspace."
+      title={
+        <>
+          Turn raw audio into <em>finished text</em>.
+        </>
+      }
+    >
+      <Card className="mx-auto w-full max-w-md">
         <CardHeader>
           <CardTitle>Super Transcriber</CardTitle>
           <CardDescription>Sign in with your Cognito user account.</CardDescription>
@@ -59,7 +68,7 @@ export function LoginPage() {
                 value={password}
               />
             </div>
-            {error ? <p className="text-sm text-red-700">{error}</p> : null}
+            {error ? <p className="text-sm text-red-300">{error}</p> : null}
             <Button className="w-full" disabled={isSubmitting} size="lg" type="submit">
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {isSubmitting ? "Signing in" : "Sign in"}
@@ -73,6 +82,6 @@ export function LoginPage() {
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthShell>
   );
 }

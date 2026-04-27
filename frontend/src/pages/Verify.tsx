@@ -1,6 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { AuthShell } from "../components/AuthShell";
 import { verifyRegistration } from "../lib/cognito";
 import { useAuthStore } from "../store/authStore";
 import { Button } from "../components/ui/button";
@@ -78,8 +79,16 @@ export function VerifyPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6 py-12">
-      <Card className="w-full max-w-md">
+    <AuthShell
+      eyebrow="Verify email"
+      subtitle="Enter the confirmation code Cognito emailed you. The code fields keep the current auto-advance and paste behavior."
+      title={
+        <>
+          Confirm the account, then start <em>transcribing</em>.
+        </>
+      }
+    >
+      <Card className="mx-auto w-full max-w-md">
         <CardHeader>
           <CardTitle>Verify email</CardTitle>
           <CardDescription>Enter the 6-digit code sent to {email}.</CardDescription>
@@ -89,7 +98,7 @@ export function VerifyPage() {
             <div className="flex justify-between gap-2">
               {code.map((value, index) => (
                 <input
-                  className="h-14 w-12 rounded-2xl border border-input bg-white/80 text-center text-lg font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="h-14 w-12 rounded-2xl border border-input bg-[rgba(255,255,255,0.03)] text-center text-lg font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   inputMode="numeric"
                   key={index}
                   maxLength={6}
@@ -106,7 +115,7 @@ export function VerifyPage() {
                 />
               ))}
             </div>
-            {error ? <p className="text-sm text-red-700">{error}</p> : null}
+            {error ? <p className="text-sm text-red-300">{error}</p> : null}
             <Button className="w-full" disabled={isSubmitting} size="lg" type="submit">
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {isSubmitting ? "Verifying" : "Verify account"}
@@ -120,6 +129,6 @@ export function VerifyPage() {
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthShell>
   );
 }

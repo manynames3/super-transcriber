@@ -121,8 +121,8 @@ export function UploadDropzone({ onUploaded }: UploadDropzoneProps) {
   };
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="border-b border-border/70 bg-white/50">
+    <Card className="glass-line overflow-hidden">
+      <CardHeader className="border-b border-white/8 bg-transparent">
         <CardTitle>New transcription</CardTitle>
         <CardDescription>
           MP3 only, 200MB max, direct-to-S3 upload. Duration is shown before you spend Transcribe minutes.
@@ -130,10 +130,10 @@ export function UploadDropzone({ onUploaded }: UploadDropzoneProps) {
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
         <button
-          className={`flex min-h-[220px] w-full flex-col items-center justify-center rounded-[24px] border-2 border-dashed px-6 py-10 text-center transition ${
+          className={`flex min-h-[240px] w-full flex-col items-center justify-center rounded-[24px] border px-6 py-10 text-center transition ${
             isDragging
-              ? "border-primary bg-primary/5"
-              : "border-border bg-secondary/20 hover:border-primary/50 hover:bg-secondary/35"
+              ? "border-primary bg-[rgba(212,168,67,0.08)]"
+              : "border-white/10 bg-[rgba(255,255,255,0.02)] hover:border-[rgba(212,168,67,0.35)] hover:bg-[rgba(255,255,255,0.04)]"
           }`}
           onClick={() => inputRef.current?.click()}
           onDragEnter={(event) => {
@@ -155,9 +155,11 @@ export function UploadDropzone({ onUploaded }: UploadDropzoneProps) {
           }}
           type="button"
         >
-          <UploadCloud className="mb-4 h-12 w-12 text-primary" />
-          <p className="text-lg font-semibold">Drag an MP3 here or click to browse</p>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(212,168,67,0.2)] bg-[rgba(212,168,67,0.1)]">
+            <UploadCloud className="h-7 w-7 text-primary" />
+          </div>
+          <p className="text-xl font-medium tracking-[-0.02em]">Drag an MP3 here or click to browse</p>
+          <p className="mt-3 max-w-xl text-sm text-muted-foreground">
             The browser validates the MP3 header, file size, and duration before any network call.
           </p>
         </button>
@@ -171,10 +173,10 @@ export function UploadDropzone({ onUploaded }: UploadDropzoneProps) {
         />
 
         {file && durationSeconds !== null ? (
-          <div className="rounded-[24px] border border-border/70 bg-white/70 p-5">
+          <div className="panel-soft rounded-[24px] p-5">
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="font-medium">{file.name}</p>
+                <p className="font-medium text-foreground">{file.name}</p>
                 <p className="text-sm text-muted-foreground">
                   {(file.size / (1024 * 1024)).toFixed(2)} MB
                 </p>
@@ -192,14 +194,14 @@ export function UploadDropzone({ onUploaded }: UploadDropzoneProps) {
         {isSubmitting ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">Upload progress</span>
+              <span className="font-medium text-foreground">Upload progress</span>
               <span>{Math.round(uploadProgress)}%</span>
             </div>
             <ProgressBar value={uploadProgress} />
           </div>
         ) : null}
 
-        {error ? <p className="text-sm text-red-700">{error}</p> : null}
+        {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
         <div className="flex justify-end">
           <Button disabled={!file || durationSeconds === null || isSubmitting} onClick={() => void handleSubmit()}>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { Navigate } from "react-router-dom";
+import { AppShell } from "../components/AppShell";
 import { apiRequest } from "../lib/api";
 import { useAuthStore } from "../store/authStore";
 import { useJobStore, type JobSortKey } from "../store/jobStore";
@@ -67,26 +68,57 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-10">
-      <header className="space-y-3">
-        <p className="text-sm font-medium uppercase tracking-[0.3em] text-primary">Dashboard</p>
-        <h1 className="text-4xl font-semibold tracking-tight">Low-cost MP3 transcription</h1>
-        <p className="max-w-3xl text-muted-foreground">
-          Upload an MP3, monitor its Transcribe status, and export a readable speaker-labeled transcript once processing completes.
-        </p>
-      </header>
+    <AppShell>
+      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-10">
+        <header className="space-y-6 pt-4">
+          <div className="hero-kicker">
+            <span className="hero-dot" />
+            Dashboard
+          </div>
+          <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:items-end">
+            <div className="space-y-5">
+              <h1 className="hero-title">
+                Low-cost MP3 <em>transcription</em> without the platform bloat.
+              </h1>
+              <p className="hero-copy">
+                Upload an MP3, see the duration before you spend Transcribe minutes, then track a diarized transcript all the way through copy and export.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              <MetricCard label="Jobs loaded" value={sortedJobs.length.toString()} />
+              <MetricCard
+                label="Completed"
+                value={sortedJobs.filter((job) => job.status === "COMPLETED").length.toString()}
+              />
+              <MetricCard
+                label="Active"
+                value={sortedJobs.filter((job) => job.status === "PENDING" || job.status === "IN_PROGRESS").length.toString()}
+              />
+            </div>
+          </div>
+        </header>
 
-      <UploadDropzone onUploaded={() => loadJobs()} />
+        <UploadDropzone onUploaded={() => loadJobs()} />
 
-      <JobTable
-        jobs={sortedJobs}
-        nextCursor={nextCursor}
-        onDelete={handleDelete}
-        onLoadMore={() => loadJobs(nextCursor ?? undefined)}
-        onSort={handleSort}
-        sortDirection={sortDirection}
-        sortKey={sortKey}
-      />
+        <JobTable
+          jobs={sortedJobs}
+          nextCursor={nextCursor}
+          onDelete={handleDelete}
+          onLoadMore={() => loadJobs(nextCursor ?? undefined)}
+          onSort={handleSort}
+          sortDirection={sortDirection}
+          sortKey={sortKey}
+        />
+      </div>
+    </AppShell>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="panel-soft rounded-[20px] p-4">
+      <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <p className="mt-2 font-serif text-4xl leading-none tracking-[-0.04em] text-foreground">{value}</p>
     </div>
   );
 }

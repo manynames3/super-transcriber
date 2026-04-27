@@ -1,11 +1,20 @@
 import { Link } from "react-router-dom";
+import { AuthShell } from "../components/AuthShell";
 import { buttonVariants } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 
 export function NotFoundPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center px-6 py-12">
-      <Card className="w-full max-w-lg text-center">
+    <AuthShell
+      eyebrow="Missing route"
+      subtitle="This single-page app only exposes auth, dashboard, and transcript routes. The requested path is outside the current shell."
+      title={
+        <>
+          This page fell <em>off</em> the map.
+        </>
+      }
+    >
+      <Card className="mx-auto w-full max-w-lg text-center">
         <CardHeader>
           <CardTitle>Page not found</CardTitle>
           <CardDescription>The route you requested does not exist in this single-page app.</CardDescription>
@@ -16,6 +25,6 @@ export function NotFoundPage() {
           </Link>
         </CardContent>
       </Card>
-    </div>
+    </AuthShell>
   );
 }
