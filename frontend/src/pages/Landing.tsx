@@ -8,10 +8,13 @@ import {
   FileCode2,
   FileText,
   History,
+  Menu,
   Shield,
   Users,
+  X,
   Zap,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { BrandMark } from "../components/BrandMark";
 import { Button, buttonVariants } from "../components/ui/button";
@@ -142,6 +145,18 @@ export function LandingPage() {
   const session = useAuthStore((state) => state.session);
   const ctaHref = session ? "/dashboard" : "/login";
   const ctaLabel = session ? "Open app" : "Start for free";
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
     <div className="app-shell">
@@ -161,7 +176,7 @@ export function LandingPage() {
               FAQ
             </a>
           </nav>
-          <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-3 md:flex">
             <Link className="nav-link-premium" to={session ? "/dashboard" : "/login"}>
               {session ? "Dashboard" : "Sign in"}
             </Link>
@@ -169,7 +184,60 @@ export function LandingPage() {
               {ctaLabel}
             </Link>
           </div>
+          <Button
+            aria-controls="mobile-site-nav"
+            aria-expanded={mobileMenuOpen}
+            aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            className="h-10 w-10 border border-white/10 bg-white/[0.03] p-0 text-foreground hover:bg-white/8 md:hidden"
+            onClick={() => setMobileMenuOpen((current) => !current)}
+            variant="ghost"
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
         </div>
+        {mobileMenuOpen ? (
+          <div className="border-t border-white/8 md:hidden" id="mobile-site-nav">
+            <div className="mx-auto max-w-7xl px-6 py-4">
+              <nav className="flex flex-col gap-2">
+                <a
+                  className="nav-link-premium rounded-[12px] border border-white/8 bg-white/[0.02] px-4 py-3 text-left text-foreground"
+                  href="#how-it-works"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  How it works
+                </a>
+                <a
+                  className="nav-link-premium rounded-[12px] border border-white/8 bg-white/[0.02] px-4 py-3 text-left text-foreground"
+                  href="#pricing"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Pricing
+                </a>
+                <a
+                  className="nav-link-premium rounded-[12px] border border-white/8 bg-white/[0.02] px-4 py-3 text-left text-foreground"
+                  href="#faq"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  FAQ
+                </a>
+                <Link
+                  className="nav-link-premium rounded-[12px] border border-white/8 bg-white/[0.02] px-4 py-3 text-left text-foreground"
+                  onClick={() => setMobileMenuOpen(false)}
+                  to={session ? "/dashboard" : "/login"}
+                >
+                  {session ? "Dashboard" : "Sign in"}
+                </Link>
+                <Link
+                  className={cn(buttonVariants(), "mt-2 w-full")}
+                  onClick={() => setMobileMenuOpen(false)}
+                  to={ctaHref}
+                >
+                  {ctaLabel}
+                </Link>
+              </nav>
+            </div>
+          </div>
+        ) : null}
       </header>
 
       <main className="relative z-10" id="top">
