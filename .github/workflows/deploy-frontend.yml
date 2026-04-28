@@ -69,6 +69,16 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Write frontend production env
+        working-directory: frontend
+        run: |
+          cat > .env.production <<EOF
+          VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}
+          VITE_AWS_REGION=${{ vars.VITE_AWS_REGION }}
+          VITE_COGNITO_CLIENT_ID=${{ vars.VITE_COGNITO_CLIENT_ID }}
+          VITE_COGNITO_USER_POOL_ID=${{ vars.VITE_COGNITO_USER_POOL_ID }}
+          EOF
+
       - name: Build frontend
         working-directory: frontend
         run: npm run build
