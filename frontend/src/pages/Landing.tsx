@@ -257,17 +257,17 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-6 py-20" id="how-it-works">
+        <section className="mx-auto max-w-7xl px-6 py-14 md:py-20" id="how-it-works">
           <div className="section-label">Process</div>
-          <h2 className="hero-title mt-4 max-w-3xl text-4xl md:text-6xl">
+          <h2 className="hero-title mt-3 max-w-[10ch] text-[28px] leading-[1.02] md:mt-4 md:max-w-3xl md:text-6xl">
             Drag, drop,
             <em> done.</em>
           </h2>
-          <p className="hero-copy mt-5 max-w-2xl">
+          <p className="hero-copy mt-4 max-w-lg md:mt-5 md:max-w-2xl">
             Three steps from audio file to polished transcript. No software to install and no workflow detours.
           </p>
 
-          <div className="mt-16 grid gap-px overflow-hidden rounded-[22px] border border-white/8 bg-white/8 lg:grid-cols-3">
+          <div className="mt-8 grid gap-px overflow-hidden rounded-[22px] border border-white/8 bg-white/8 md:mt-12 lg:mt-16 lg:grid-cols-3">
             <StepCard
               description="Drag your audio file into the upload zone or click to browse. We show duration and estimated cost before submission."
               icon={<UploadGlyph />}
@@ -289,15 +289,15 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-6 py-20">
+        <section className="mx-auto max-w-7xl px-6 py-14 md:py-20">
           <div className="section-label">Features</div>
-          <h2 className="hero-title mt-4 max-w-4xl text-4xl md:text-6xl">
+          <h2 className="hero-title mt-3 max-w-[11ch] text-[28px] leading-[1.02] md:mt-4 md:max-w-4xl md:text-6xl">
             Everything you need,
             <br />
             <em>nothing you don&apos;t.</em>
           </h2>
 
-          <div className="mt-16 grid gap-6 lg:grid-cols-2">
+          <div className="mt-8 grid gap-4 md:mt-12 md:gap-6 lg:mt-16 lg:grid-cols-2">
             <FeatureCard
               description="Powered by Amazon Transcribe, the same speech AI used at enterprise scale. Clear audio regularly exceeds 97% word accuracy."
               icon={<CheckCircle2 className="h-5 w-5" />}
@@ -318,19 +318,19 @@ export function LandingPage() {
               icon={<History className="h-5 w-5" />}
               title="Full job history"
             />
-            <div className="panel relative overflow-hidden rounded-[24px] border border-[rgba(212,168,67,0.2)] p-8 lg:col-span-2">
+            <div className="panel relative overflow-hidden rounded-[24px] border border-[rgba(212,168,67,0.2)] p-5 md:p-8 lg:col-span-2">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,168,67,0.1),transparent_55%)]" />
-              <div className="relative grid gap-8 lg:grid-cols-2 lg:items-center">
+              <div className="relative grid gap-5 md:gap-8 lg:grid-cols-2 lg:items-center">
                 <div>
                   <FeatureCardIcon icon={<Shield className="h-5 w-5" />} />
-                  <h3 className="mt-5 text-2xl font-medium tracking-[-0.02em] text-foreground">
+                  <h3 className="mt-4 text-xl font-medium tracking-[-0.02em] text-foreground md:mt-5 md:text-2xl">
                     AWS-grade infrastructure, priced for humans
                   </h3>
-                  <p className="mt-4 text-[15px] leading-7 text-muted-foreground">
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground md:mt-4 md:text-[15px] md:leading-7">
                     Super Transcriber sits on Amazon Transcribe, S3, Lambda, DynamoDB, and Cognito, but presents them like a clean SaaS offer. The result is a credible monetized product surface with the economics of serverless infrastructure underneath it.
                   </p>
                 </div>
-                <div className="rounded-[18px] border border-white/8 bg-[rgba(10,10,15,0.9)] p-5 font-mono text-sm leading-7 text-muted-foreground">
+                <div className="rounded-[18px] border border-white/8 bg-[rgba(10,10,15,0.9)] p-4 font-mono text-[13px] leading-6 text-muted-foreground md:p-5 md:text-sm md:leading-7">
                   <div>
                     <span className="text-primary">POST</span> /transcribe
                   </div>
@@ -514,11 +514,11 @@ function StepCard({
   title: string;
 }) {
   return (
-    <div className="bg-[rgba(19,19,26,0.96)] p-8">
-      <div className="font-serif text-5xl leading-none tracking-[-0.04em] text-white/15">{number}</div>
-      <FeatureCardIcon className="mt-6" icon={icon} />
-      <h3 className="mt-5 text-lg font-medium tracking-[-0.02em] text-foreground">{title}</h3>
-      <p className="mt-3 text-sm leading-7 text-muted-foreground">{description}</p>
+    <div className="bg-[rgba(19,19,26,0.96)] p-5 md:p-8">
+      <div className="font-serif text-4xl leading-none tracking-[-0.04em] text-white/15 md:text-5xl">{number}</div>
+      <FeatureCardIcon className="mt-4 md:mt-6" icon={icon} />
+      <h3 className="mt-4 text-base font-medium tracking-[-0.02em] text-foreground md:mt-5 md:text-lg">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground md:mt-3 md:leading-7">{description}</p>
     </div>
   );
 }
@@ -533,12 +533,12 @@ function FeatureCard({
   title: string;
 }) {
   return (
-    <div className="panel relative overflow-hidden rounded-[24px] p-8">
+    <div className="panel relative overflow-hidden rounded-[24px] p-5 md:p-8">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,168,67,0.08),transparent_55%)] opacity-0 transition-opacity duration-300 hover:opacity-100" />
       <div className="relative">
         <FeatureCardIcon icon={icon} />
-        <h3 className="mt-5 text-xl font-medium tracking-[-0.02em] text-foreground">{title}</h3>
-        <p className="mt-3 text-sm leading-7 text-muted-foreground">{description}</p>
+        <h3 className="mt-4 text-lg font-medium tracking-[-0.02em] text-foreground md:mt-5 md:text-xl">{title}</h3>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground md:mt-3 md:leading-7">{description}</p>
       </div>
     </div>
   );
