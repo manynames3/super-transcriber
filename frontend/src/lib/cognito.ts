@@ -15,8 +15,22 @@ interface CognitoResponse {
 }
 
 function assertConfig() {
-  if (!region || !userPoolId || !clientId) {
-    throw new Error("Missing Cognito configuration. Check your Vite environment variables.");
+  const missing: string[] = [];
+
+  if (!region) {
+    missing.push("VITE_AWS_REGION");
+  }
+
+  if (!userPoolId) {
+    missing.push("VITE_COGNITO_USER_POOL_ID");
+  }
+
+  if (!clientId) {
+    missing.push("VITE_COGNITO_CLIENT_ID");
+  }
+
+  if (missing.length > 0) {
+    throw new Error(`Missing Cognito configuration: ${missing.join(", ")}`);
   }
 }
 

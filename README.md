@@ -176,3 +176,57 @@ Required repository variables:
 - Transcript JSON expires after 90 days.
 - Active jobs are capped at 5 per user.
 - Polling starts at 3 seconds, backs off to 30 seconds, and stops after 15 minutes.
+
+## Troubleshooting
+
+### Upload fails with `Failed to fetch`
+
+If the dashboard upload button shows `Failed to fetch`, the browser usually failed on the API Gateway preflight request before the app received a JSON error body.
+
+Checks:
+
+- Confirm `TF_ALLOWED_ORIGIN` exactly matches the deployed frontend origin, for example `https://super-transcriber.pages.dev`
+- Re-run `terraform apply` after changing API Gateway or CORS settings
+- Verify the API preflight succeeds:
+
+```bash
+curl -i -X OPTIONS 'https://YOUR_API_ID.execute-api.us-east-1.amazonaws.com/upload-url' \
+  -H 'Origin: https://super-transcriber.pages.dev' \
+  -H 'Access-Control-Request-Method: POST' \
+  -H 'Access-Control-Request-Headers: authorization,content-type'
+```
+
+Expected result:
+
+- `HTTP/2 204`
+
+If you see `429 Too Many Requests`, check the API Gateway stage throttling configuration. This project expects non-zero default stage throttling values so CORS preflight requests are not rejected before upload.
+
+### `Missing Cognito configuration`
+
+The frontend throws this when the Vite build does not have all required Cognito variables.
+
+Required values:
+
+- `VITE_AWS_REGION`
+- `VITE_COGNITO_USER_POOL_ID`
+- `VITE_COGNITO_CLIENT_ID`
+
+For local development:
+
+- create `frontend/.env`
+- populate it from Terraform outputs
+
+```bash
+cd /Users/aiden/Documents/Codex/2026-04-27/github-plugin-github-openai-curated-codex/terraform
+printf "VITE_API_BASE_URL=%s\n" "$(terraform output -raw api_base_url)"
+printf "VITE_COGNITO_USER_POOL_ID=%s\n" "$(terraform output -raw cognito_user_pool_id)"
+printf "VITE_COGNITO_CLIENT_ID=%s\n" "$(terraform output -raw cognito_client_id)"
+printf "VITE_AWS_REGION=%s\n" "$(terraform output -raw aws_region)"
+```
+
+For Cloudflare Pages via GitHub Actions:
+
+- add the same values under `Settings -> Secrets and variables -> Actions -> Variables`
+- re-run `Deploy Frontend` after adding or changing them
+- hard refresh the deployed site after the new frontend bundle is published
