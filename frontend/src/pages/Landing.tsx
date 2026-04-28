@@ -550,7 +550,7 @@ export function LandingPage() {
       </main>
 
       <footer className="mx-auto flex w-full max-w-7xl flex-col gap-4 border-t border-white/8 px-6 py-10 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
-        <div>© 2026 Supreme AI Ventures LLC. Built on AWS.</div>
+        <div>©2026 SUPREME AI VENTURES LLC</div>
         <div className="flex flex-wrap gap-6">
           <a className="hover:text-foreground" href="#pricing">
             Pricing
