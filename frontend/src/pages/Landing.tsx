@@ -436,7 +436,7 @@ export function LandingPage() {
               {plans.map((plan) => (
                 <div
                   className={cn(
-                    "panel relative rounded-[24px] p-8",
+                    "panel relative flex h-full flex-col rounded-[24px] p-8",
                     plan.featured && "scale-[1.02] border-[rgba(212,168,67,0.35)] bg-[rgba(28,28,38,0.98)]",
                   )}
                   key={plan.name}
@@ -454,7 +454,7 @@ export function LandingPage() {
                   </div>
                   <p className="mt-4 min-h-[48px] text-sm leading-6 text-muted-foreground">{plan.tagline}</p>
                   <div className="my-6 h-px bg-white/8" />
-                  <ul className="space-y-3">
+                  <ul className="flex-1 space-y-3">
                     {plan.features.map((feature) => (
                       <li className="flex items-start gap-3 text-sm text-muted-foreground" key={feature}>
                         <span className={cn("mt-0.5 flex h-5 w-5 items-center justify-center rounded-md", plan.tierClassName)}>
