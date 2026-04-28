@@ -108,24 +108,6 @@ resource "aws_apigatewayv2_stage" "default" {
     detailed_metrics_enabled = true
   }
 
-  route_settings {
-    route_key              = aws_apigatewayv2_route.upload_url.route_key
-    throttling_burst_limit = 2
-    throttling_rate_limit  = 0.1666666667
-  }
-
-  route_settings {
-    route_key              = aws_apigatewayv2_route.transcribe.route_key
-    throttling_burst_limit = 1
-    throttling_rate_limit  = 0.0833333333
-  }
-
-  route_settings {
-    route_key              = aws_apigatewayv2_route.job_status.route_key
-    throttling_burst_limit = 10
-    throttling_rate_limit  = 1
-  }
-
   tags = local.tags
 }
 
