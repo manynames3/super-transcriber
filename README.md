@@ -133,7 +133,6 @@ Required secret:
 
 Required repository variables:
 
-- `TF_AWS_REGION`
 - `TF_ALLOWED_ORIGIN`
 - `TF_STATE_BUCKET`
 - `TF_STATE_KEY`
@@ -142,6 +141,7 @@ Required repository variables:
 
 Optional repository variables:
 
+- `TF_AWS_REGION` default: `us-east-1`
 - `TF_ENVIRONMENT`
 - `TF_PROJECT_NAME`
 

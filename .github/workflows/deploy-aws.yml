@@ -13,14 +13,52 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      AWS_REGION: ${{ vars.TF_AWS_REGION }}
+      AWS_REGION: ${{ vars.TF_AWS_REGION || 'us-east-1' }}
       TF_VAR_allowed_origin: ${{ vars.TF_ALLOWED_ORIGIN }}
-      TF_VAR_aws_region: ${{ vars.TF_AWS_REGION }}
-      TF_VAR_environment: ${{ vars.TF_ENVIRONMENT }}
-      TF_VAR_project_name: ${{ vars.TF_PROJECT_NAME }}
+      TF_VAR_aws_region: ${{ vars.TF_AWS_REGION || 'us-east-1' }}
+      TF_VAR_environment: ${{ vars.TF_ENVIRONMENT || 'dev' }}
+      TF_VAR_project_name: ${{ vars.TF_PROJECT_NAME || 'super-transcriber' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate deploy configuration
+        run: |
+          missing=0
+
+          if [ -z "${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}" ]; then
+            echo "::error::Missing GitHub secret AWS_GITHUB_ACTIONS_ROLE_ARN"
+            missing=1
+          fi
+
+          if [ -z "${{ vars.TF_ALLOWED_ORIGIN }}" ]; then
+            echo "::error::Missing GitHub variable TF_ALLOWED_ORIGIN"
+            missing=1
+          fi
+
+          if [ -z "${{ vars.TF_STATE_BUCKET }}" ]; then
+            echo "::error::Missing GitHub variable TF_STATE_BUCKET"
+            missing=1
+          fi
+
+          if [ -z "${{ vars.TF_STATE_KEY }}" ]; then
+            echo "::error::Missing GitHub variable TF_STATE_KEY"
+            missing=1
+          fi
+
+          if [ -z "${{ vars.TF_STATE_REGION }}" ]; then
+            echo "::error::Missing GitHub variable TF_STATE_REGION"
+            missing=1
+          fi
+
+          if [ -z "${{ vars.TF_STATE_LOCK_TABLE }}" ]; then
+            echo "::error::Missing GitHub variable TF_STATE_LOCK_TABLE"
+            missing=1
+          fi
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

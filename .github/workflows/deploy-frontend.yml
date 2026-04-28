@@ -20,6 +20,44 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate deploy configuration
+        run: |
+          missing=0
+
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+            echo "::error::Missing GitHub secret CLOUDFLARE_API_TOKEN"
+            missing=1
+          fi
+
+          if [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+            echo "::error::Missing GitHub secret CLOUDFLARE_ACCOUNT_ID"
+            missing=1
+          fi
+
+          if [ -z "${{ vars.VITE_API_BASE_URL }}" ]; then
+            echo "::error::Missing GitHub variable VITE_API_BASE_URL"
+            missing=1
+          fi
+
+          if [ -z "${{ vars.VITE_COGNITO_USER_POOL_ID }}" ]; then
+            echo "::error::Missing GitHub variable VITE_COGNITO_USER_POOL_ID"
+            missing=1
+          fi
+
+          if [ -z "${{ vars.VITE_COGNITO_CLIENT_ID }}" ]; then
+            echo "::error::Missing GitHub variable VITE_COGNITO_CLIENT_ID"
+            missing=1
+          fi
+
+          if [ -z "${{ vars.VITE_AWS_REGION }}" ]; then
+            echo "::error::Missing GitHub variable VITE_AWS_REGION"
+            missing=1
+          fi
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
