@@ -53,16 +53,16 @@ frontend/   React 18 + Vite single-page app
 1. Install dependencies:
 
 ```bash
-cd /Users/aiden/Documents/Codex/2026-04-27/github-plugin-github-openai-curated-codex/cdk && npm ci
-cd /Users/aiden/Documents/Codex/2026-04-27/github-plugin-github-openai-curated-codex/frontend && npm ci
+cd cdk && npm ci
+cd ../frontend && npm ci
 ```
 
-2. Copy [terraform/terraform.tfvars.example](/Users/aiden/Documents/Codex/2026-04-27/github-plugin-github-openai-curated-codex/terraform/terraform.tfvars.example) to `terraform.tfvars` and set `allowed_origin` to your Cloudflare Pages URL.
+2. Copy `terraform/terraform.tfvars.example` to `terraform/terraform.tfvars` and set `allowed_origin` to your Cloudflare Pages URL.
 
 3. Bundle Lambda artifacts:
 
 ```bash
-cd /Users/aiden/Documents/Codex/2026-04-27/github-plugin-github-openai-curated-codex/cdk
+cd cdk
 npm run build:lambdas
 ```
 
@@ -83,12 +83,12 @@ aws dynamodb create-table \
   --region us-east-1
 ```
 
-Then copy [terraform/backend.hcl.example](/Users/aiden/Documents/Codex/2026-04-27/github-plugin-github-openai-curated-codex/terraform/backend.hcl.example) to `backend.hcl` and fill in your state bucket, key, and lock table.
+Then copy `terraform/backend.hcl.example` to `terraform/backend.hcl` and fill in your state bucket, key, and lock table.
 
 ## Deploy AWS with Terraform
 
 ```bash
-cd /Users/aiden/Documents/Codex/2026-04-27/github-plugin-github-openai-curated-codex/terraform
+cd terraform
 terraform init -backend-config=backend.hcl
 terraform plan
 terraform apply
@@ -105,7 +105,7 @@ terraform output -raw aws_region
 
 ## Frontend Setup
 
-Copy [frontend/.env.example](/Users/aiden/Documents/Codex/2026-04-27/github-plugin-github-openai-curated-codex/frontend/.env.example) to `.env` and fill it from Terraform outputs:
+Copy `frontend/.env.example` to `frontend/.env` and fill it from Terraform outputs:
 
 ```env
 VITE_API_BASE_URL=...
@@ -117,7 +117,7 @@ VITE_AWS_REGION=us-east-1
 Local frontend development:
 
 ```bash
-cd /Users/aiden/Documents/Codex/2026-04-27/github-plugin-github-openai-curated-codex/frontend
+cd frontend
 npm run dev
 ```
 
@@ -125,7 +125,7 @@ npm run dev
 
 ### AWS deploy workflow
 
-File: [.github/workflows/deploy-aws.yml](/Users/aiden/Documents/Codex/2026-04-27/github-plugin-github-openai-curated-codex/.github/workflows/deploy-aws.yml)
+File: `.github/workflows/deploy-aws.yml`
 
 Required secret:
 
@@ -147,7 +147,7 @@ Optional repository variables:
 
 ### Frontend deploy workflow
 
-File: [.github/workflows/deploy-frontend.yml](/Users/aiden/Documents/Codex/2026-04-27/github-plugin-github-openai-curated-codex/.github/workflows/deploy-frontend.yml)
+File: `.github/workflows/deploy-frontend.yml`
 
 Required secrets:
 
@@ -218,7 +218,7 @@ For local development:
 - populate it from Terraform outputs
 
 ```bash
-cd /Users/aiden/Documents/Codex/2026-04-27/github-plugin-github-openai-curated-codex/terraform
+cd terraform
 printf "VITE_API_BASE_URL=%s\n" "$(terraform output -raw api_base_url)"
 printf "VITE_COGNITO_USER_POOL_ID=%s\n" "$(terraform output -raw cognito_user_pool_id)"
 printf "VITE_COGNITO_CLIENT_ID=%s\n" "$(terraform output -raw cognito_client_id)"
