@@ -1,21 +1,47 @@
 # Super Transcriber
 
-Super Transcriber is a low-traffic transcription app built for near-zero fixed cost. Users upload MP3 files directly to S3, Lambda starts Amazon Transcribe async jobs, EventBridge finalizes completed jobs, and a React app on Cloudflare Pages handles auth, upload, polling, and transcript export.
+Super Transcriber is a cost-first transcription web app that lets authenticated users upload MP3s, send them through Amazon Transcribe, and review or export speaker-labeled transcripts from a polished React dashboard. The repository demonstrates a full-stack serverless build: custom Cognito auth, direct browser-to-S3 uploads, a Lambda + DynamoDB API, an EventBridge-driven completion pipeline, Terraform-managed AWS infrastructure, and Cloudflare Pages frontend hosting.
+
+- **Live demo:** [super-transcriber.pages.dev](https://super-transcriber.pages.dev)
+- **Architecture docs:** [docs/architecture.md](docs/architecture.md)
+- **ADRs:** [docs/adrs/README.md](docs/adrs/README.md)
+
+## About
+
+- Built as a personal-scale SaaS-style product rather than a toy demo: landing page, auth, dashboard, job history, transcript viewer, and deployment workflows are all included.
+- Uses a custom Cognito login, registration, and email verification flow instead of Cognito Hosted UI.
+- Keeps cloud cost constraints explicit in the architecture: HTTP API over REST, Lambda on `arm64`, DynamoDB on-demand, S3 lifecycle cleanup, and no VPC or NAT.
+- Shows practical client and backend engineering details such as MP3 header validation, duration-based cost preview, retryable polling, presigned uploads, and soft-delete job history.
+
+## Tech Stack
+
+| Area | Technologies |
+|---|---|
+| Frontend | React 18, Vite, TypeScript, Tailwind CSS, shadcn-style UI, Zustand |
+| Auth | Amazon Cognito User Pool, custom forms, JWT auth, refresh-token retry flow |
+| API | API Gateway HTTP API, Lambda proxy integrations |
+| Compute | AWS Lambda (Node.js 20, `arm64`) |
+| Storage | Amazon S3, DynamoDB single-table design |
+| Transcription | Amazon Transcribe async jobs with speaker diarization |
+| Eventing | Amazon EventBridge |
+| Infrastructure | Terraform for deployable infrastructure, CDK TypeScript used for Lambda source and bundling |
+| Hosting | Cloudflare Pages |
+| CI/CD | GitHub Actions, Cloudflare Wrangler, optional AWS OIDC workflow |
+
+## Engineering Highlights
+
+- Direct-to-S3 upload path: the browser requests a presigned `PUT` URL, uploads the MP3 directly with progress reporting, then starts transcription without proxying file bytes through Lambda.
+- Event-driven completion pipeline: Amazon Transcribe emits completion events, EventBridge triggers a completion Lambda, the Lambda stores the raw transcript JSON in S3, and DynamoDB is updated with final status and word count.
+- Custom auth without persistent browser token storage: access, ID, and refresh tokens live only in Zustand memory, and the fetch wrapper retries exactly once after a `401` by refreshing the session through Cognito.
+- Cost-aware UX: the client validates the `.mp3` extension and header bytes, enforces a 200 MB limit, extracts duration with the Web Audio API, and estimates variable Amazon Transcribe cost before submission.
+- Transcript-focused product UX: polling uses exponential backoff, diarized text is reformatted into speaker sections, large transcripts paginate into 2,500-word chunks, and users can copy or download `.txt` and raw `.json` output.
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    A["React + Vite on Cloudflare Pages"] -->|"Login / register / verify"| B["Amazon Cognito User Pool"]
-    A -->|"HTTP API + JWT"| C["API Gateway HTTP API"]
-    C --> D["Lambda handlers (Node.js 20, arm64)"]
-    D --> E["DynamoDB single table<br/>super-transcriber"]
-    D --> F["S3 upload bucket<br/>uploads/{userId}/{jobId}/audio.mp3"]
-    D --> G["Amazon Transcribe async jobs"]
-    G --> H["EventBridge rule"]
-    H --> I["Completion Lambda"]
-    I --> J["S3 transcript bucket<br/>transcripts/{userId}/{jobId}/transcript.json"]
-```
+The system is split between a static frontend on Cloudflare Pages and a serverless AWS backend. Terraform is the deployable infrastructure source of truth. Lambda handler source lives in `cdk/lambda/`, and an esbuild bundling script writes deployable artifacts into `terraform/dist/` for Terraform packaging.
+
+- High-level architecture: [docs/architecture.md](docs/architecture.md)
+- Architectural decisions: [docs/adrs/README.md](docs/adrs/README.md)
 
 ## Cost Profile
 
@@ -33,20 +59,28 @@ flowchart LR
 ## Repository Layout
 
 ```text
-terraform/  Terraform infrastructure, backend config examples, outputs
+docs/       Architecture notes and ADRs
+terraform/  Terraform infrastructure, backend config examples, and packaged artifacts
 cdk/        Lambda TypeScript sources and bundling toolchain
 frontend/   React 18 + Vite single-page app
 .github/    GitHub Actions workflows
 ```
 
+## Limitations
+
+- MP3-only input in the current product flow.
+- Speaker diarization is currently fixed to two speakers in the UI and transcription request path.
+- The app is intentionally tuned for low traffic: active jobs are capped at 5 per user and job listing pagination is capped at 20 per request.
+- The deployed AWS account must have Amazon Transcribe enabled; some accounts may require separate service activation before jobs can run.
+
 ## Prerequisites
 
-- AWS account with access to Cognito, Lambda, API Gateway HTTP API, S3, DynamoDB, and EventBridge
+- AWS account with access to Cognito, Lambda, API Gateway HTTP API, S3, DynamoDB, EventBridge, and Amazon Transcribe
 - Terraform 1.14+
 - Node.js 20+
 - npm 10+
 - Cloudflare Pages project
-- GitHub Actions OIDC role for AWS deploys
+- Optional: GitHub Actions OIDC role if you want to re-enable automated AWS deploys
 
 ## First-Time Setup
 
@@ -121,11 +155,18 @@ cd frontend
 npm run dev
 ```
 
+## Deployment Model
+
+- Infrastructure is deployed from `terraform/`.
+- Lambda source is written in `cdk/lambda/` and bundled into `terraform/dist/` by `cdk/scripts/build-lambdas.mjs`.
+- The frontend is built with Vite and deployed to Cloudflare Pages.
+- The checked-in AWS GitHub Actions workflow is currently stored as `.github/workflows/deploy-aws.disabled.yml`. Rename it back to `.github/workflows/deploy-aws.yml` after configuring the OIDC role and repo variables if you want automated AWS deploys.
+
 ## GitHub Actions
 
 ### AWS deploy workflow
 
-File: `.github/workflows/deploy-aws.yml`
+Template file: `.github/workflows/deploy-aws.disabled.yml`
 
 Required secret:
 
@@ -161,21 +202,21 @@ Required repository variables:
 - `VITE_COGNITO_CLIENT_ID`
 - `VITE_AWS_REGION`
 
-## Security Notes
+## Privacy and Security Notes
 
 - No Lambda runs in a VPC.
 - S3 buckets block all public access.
 - Client uploads use presigned URLs only.
 - API Gateway only allows the configured Pages origin.
-- Tokens stay in Zustand memory only.
+- Access, ID, and refresh tokens stay in Zustand memory only.
 - JWT validation is handled by the HTTP API Cognito authorizer.
+- Upload objects expire after 3 days and transcript JSON expires after 90 days.
 
 ## Operational Notes
 
-- Upload objects expire after 3 days.
-- Transcript JSON expires after 90 days.
 - Active jobs are capped at 5 per user.
 - Polling starts at 3 seconds, backs off to 30 seconds, and stops after 15 minutes.
+- DynamoDB records are soft-deleted, while S3 cleanup is handled by lifecycle rules rather than eager object deletion.
 
 ## Troubleshooting
 
