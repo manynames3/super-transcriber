@@ -1,7 +1,6 @@
 import type { AuthSession } from "../types";
 
 const region = import.meta.env.VITE_AWS_REGION;
-const userPoolId = import.meta.env.VITE_COGNITO_USER_POOL_ID;
 const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID;
 
 interface CognitoResponse {
@@ -19,10 +18,6 @@ function assertConfig() {
 
   if (!region) {
     missing.push("VITE_AWS_REGION");
-  }
-
-  if (!userPoolId) {
-    missing.push("VITE_COGNITO_USER_POOL_ID");
   }
 
   if (!clientId) {

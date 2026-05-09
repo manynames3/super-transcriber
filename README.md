@@ -143,7 +143,6 @@ Copy `frontend/.env.example` to `frontend/.env` and fill it from Terraform outpu
 
 ```env
 VITE_API_BASE_URL=...
-VITE_COGNITO_USER_POOL_ID=...
 VITE_COGNITO_CLIENT_ID=...
 VITE_AWS_REGION=us-east-1
 ```
@@ -198,7 +197,6 @@ Required secrets:
 Required repository variables:
 
 - `VITE_API_BASE_URL`
-- `VITE_COGNITO_USER_POOL_ID`
 - `VITE_COGNITO_CLIENT_ID`
 - `VITE_AWS_REGION`
 
@@ -250,7 +248,6 @@ The frontend throws this when the Vite build does not have all required Cognito 
 Required values:
 
 - `VITE_AWS_REGION`
-- `VITE_COGNITO_USER_POOL_ID`
 - `VITE_COGNITO_CLIENT_ID`
 
 For local development:
@@ -261,7 +258,6 @@ For local development:
 ```bash
 cd terraform
 printf "VITE_API_BASE_URL=%s\n" "$(terraform output -raw api_base_url)"
-printf "VITE_COGNITO_USER_POOL_ID=%s\n" "$(terraform output -raw cognito_user_pool_id)"
 printf "VITE_COGNITO_CLIENT_ID=%s\n" "$(terraform output -raw cognito_client_id)"
 printf "VITE_AWS_REGION=%s\n" "$(terraform output -raw aws_region)"
 ```
