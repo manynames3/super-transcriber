@@ -1,21 +1,31 @@
-import { Download, FileJson2, Files } from "lucide-react";
+import { Download, FileJson2, Files, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import type { AuditEvent } from "../types";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 
 interface TranscriptViewerProps {
+  auditTrail: AuditEvent[];
   jobId: string;
   rawTranscript: unknown;
   transcriptText: string;
 }
 
 export function TranscriptViewer({
+  auditTrail,
   jobId,
   rawTranscript,
   transcriptText,
 }: TranscriptViewerProps) {
   const [copyLabel, setCopyLabel] = useState("Copy");
   const chunks = useMemo(() => chunkTranscript(transcriptText), [transcriptText]);
+  const orderedAuditTrail = useMemo(
+    () =>
+      [...auditTrail].sort(
+        (left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime(),
+      ),
+    [auditTrail],
+  );
   const [pageIndex, setPageIndex] = useState(0);
 
   useEffect(() => {
@@ -117,6 +127,36 @@ export function TranscriptViewer({
           <Stat label="Character count" value={characters.toLocaleString()} />
           <Stat label="Estimated read time" value={`${readTimeMinutes} min`} />
         </div>
+
+        {orderedAuditTrail.length > 0 ? (
+          <div className="rounded-[24px] border border-primary/15 bg-[rgba(212,168,67,0.06)] p-5">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              <div>
+                <p className="font-medium text-foreground">Audit trail</p>
+                <p className="text-sm text-muted-foreground">Lifecycle events recorded for this transcript job.</p>
+              </div>
+            </div>
+
+            <ol className="mt-4 space-y-3">
+              {orderedAuditTrail.map((event, index) => (
+                <li
+                  className="grid gap-3 rounded-[18px] border border-white/8 bg-[rgba(12,12,18,0.58)] p-4 text-sm md:grid-cols-[180px_1fr]"
+                  key={`${event.eventType}-${event.createdAt}-${index}`}
+                >
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.22em] text-primary">{event.actor}</p>
+                    <p className="mt-1 text-muted-foreground">{formatAuditTimestamp(event.createdAt)}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">{formatAuditEventType(event.eventType)}</p>
+                    <p className="mt-1 text-muted-foreground">{event.message}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -159,4 +199,23 @@ function chunkTranscript(transcriptText: string) {
   }
 
   return chunks;
+}
+
+function formatAuditEventType(eventType: AuditEvent["eventType"]) {
+  return eventType
+    .split("_")
+    .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function formatAuditTimestamp(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
 }

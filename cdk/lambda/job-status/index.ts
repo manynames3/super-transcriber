@@ -16,6 +16,7 @@ import {
   isValidJobId,
   jsonResponse,
 } from "../shared";
+import type { AuditEvent } from "../shared";
 
 interface JobRecord {
   createdAt: string;
@@ -30,6 +31,7 @@ interface JobRecord {
   updatedAt: string;
   userId: string;
   wordCount?: number;
+  auditTrail?: AuditEvent[];
 }
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
@@ -84,6 +86,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     }
 
     const responseJob = {
+      auditTrail: job.auditTrail ?? [],
       createdAt: job.createdAt,
       durationSeconds: job.durationSeconds ?? 0,
       failureReason: liveFailureReason,

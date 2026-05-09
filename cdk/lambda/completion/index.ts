@@ -10,7 +10,7 @@ import {
   TranscribeClient,
 } from "@aws-sdk/client-transcribe";
 import type { EventBridgeEvent } from "aws-lambda";
-import { formatTranscript } from "../shared";
+import { createAuditEvent, formatTranscript } from "../shared";
 
 interface TranscribeEventDetail {
   FailureReason?: string;
@@ -60,6 +60,7 @@ export const handler = async (
   const now = new Date().toISOString();
 
   if (event.detail.TranscriptionJobStatus === "FAILED") {
+    const failureReason = event.detail.FailureReason ?? "Transcription failed.";
     await dynamo.send(
       new UpdateCommand({
         TableName: tableName,
@@ -67,12 +68,22 @@ export const handler = async (
           PK: job.PK,
           SK: job.SK,
         },
-        UpdateExpression: "SET #status = :status, failureReason = :failureReason, updatedAt = :updatedAt",
+        UpdateExpression:
+          "SET #status = :status, failureReason = :failureReason, updatedAt = :updatedAt, auditTrail = list_append(if_not_exists(auditTrail, :emptyAuditTrail), :auditTrail)",
         ExpressionAttributeNames: {
           "#status": "status",
         },
         ExpressionAttributeValues: {
-          ":failureReason": event.detail.FailureReason ?? "Transcription failed.",
+          ":auditTrail": [
+            createAuditEvent(
+              "TRANSCRIBE_FAILED",
+              `Amazon Transcribe marked the job failed: ${failureReason}`,
+              "SYSTEM",
+              now,
+            ),
+          ],
+          ":emptyAuditTrail": [],
+          ":failureReason": failureReason,
           ":status": "FAILED",
           ":updatedAt": now,
         },
@@ -118,11 +129,20 @@ export const handler = async (
         SK: job.SK,
       },
       UpdateExpression:
-        "SET #status = :status, wordCount = :wordCount, updatedAt = :updatedAt, failureReason = :failureReason",
+        "SET #status = :status, wordCount = :wordCount, updatedAt = :updatedAt, failureReason = :failureReason, auditTrail = list_append(if_not_exists(auditTrail, :emptyAuditTrail), :auditTrail)",
       ExpressionAttributeNames: {
         "#status": "status",
       },
       ExpressionAttributeValues: {
+        ":auditTrail": [
+          createAuditEvent(
+            "TRANSCRIBE_COMPLETED",
+            `Transcript JSON stored at transcripts/${job.userId}/${job.jobId}/transcript.json with ${wordCount} words.`,
+            "SYSTEM",
+            now,
+          ),
+        ],
+        ":emptyAuditTrail": [],
         ":failureReason": "",
         ":status": "COMPLETED",
         ":updatedAt": now,

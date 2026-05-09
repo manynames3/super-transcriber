@@ -62,10 +62,10 @@ flowchart LR
 2. The SPA stores the access, ID, and refresh tokens in Zustand memory and sends the access token to the HTTP API as a bearer token.
 3. `POST /upload-url` checks the active-job cap in DynamoDB, generates a ULID-based job ID, and returns a presigned `PUT` URL for `uploads/{userId}/{jobId}/audio.{ext}`.
 4. The browser uploads the MP3 or M4A file directly to S3 with XHR progress reporting.
-5. `POST /transcribe` validates S3 key ownership, starts an async Amazon Transcribe job, and creates or updates the DynamoDB job record.
+5. `POST /transcribe` validates S3 key ownership, starts an async Amazon Transcribe job, and creates or updates the DynamoDB job record with audit events.
 6. The transcript page polls `GET /job/{jobId}` with exponential backoff. While the job is pending, the API can ask Amazon Transcribe for the live status.
-7. When Transcribe emits a completion event, EventBridge triggers the completion Lambda, which downloads the raw transcript JSON, stores it in the transcript bucket, and updates DynamoDB with final status and word count.
-8. Once the job is completed, `GET /job/{jobId}` returns both the raw transcript JSON and the formatted speaker-labeled transcript text.
+7. When Transcribe emits a completion event, EventBridge triggers the completion Lambda, which downloads the raw transcript JSON, stores it in the transcript bucket, and updates DynamoDB with final status, word count, and audit events.
+8. Once the job is completed, `GET /job/{jobId}` returns the raw transcript JSON, the formatted speaker-labeled transcript text, and the job audit trail.
 
 ## Deployment Shape
 
@@ -84,6 +84,7 @@ flowchart LR
 - API Gateway and S3 CORS can allow multiple Cloudflare Pages origins through `allowed_origin` plus `allowed_origins`.
 - MP3 and M4A ingestion with client-side extension, file-header, file-size, and duration validation.
 - Tokens are intentionally kept in memory only; no localStorage, sessionStorage, or cookies are used for Cognito session state.
+- Audit events are stored on each DynamoDB job item to avoid extra fixed infrastructure while still making lifecycle activity visible.
 - The product is tuned for personal-scale traffic: active jobs are capped at 5 per user and job listings are paged.
 - Speaker diarization is currently configured for two speakers in the request path and UI.
 - Amazon Transcribe availability is an external dependency of the target AWS account.

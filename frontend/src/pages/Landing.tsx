@@ -77,7 +77,7 @@ const privacyPillars = [
   },
   {
     description:
-      "Retention is implemented with actual lifecycle rules and soft-delete job history, so the product can talk about data handling in concrete terms instead of vague privacy promises.",
+      "Retention is implemented with actual lifecycle rules, soft-delete job history, and transcript job audit events, so the product can talk about data handling in concrete terms instead of vague privacy promises.",
     icon: <Database className="h-5 w-5" />,
     title: "Retention is policy, not marketing",
   },
@@ -176,6 +176,7 @@ const pricingPlans: PricingPlan[] = [
       "Up to 20 minutes per file",
       "Speaker diarization",
       "Copy + .txt + .json export",
+      "Transcript job audit trail",
       "Priority processing + email support",
     ],
   },
@@ -193,6 +194,7 @@ const pricingPlans: PricingPlan[] = [
       "Customer-owned AWS account",
       "Customer Cognito user pool",
       "Private S3 + DynamoDB data path",
+      "Audit trail on job detail pages",
       "Terraform deployment package",
       "Implementation and upgrade support",
     ],
@@ -207,6 +209,7 @@ const comparisonRows = [
   ["Speaker diarization", "2-speaker default", "2-speaker default", "2-speaker default"],
   ["TXT export", "Yes", "Yes", "Yes"],
   ["Raw JSON export", "No", "Yes", "Yes"],
+  ["Job audit trail", "Basic", "Visible in transcript view", "Visible in customer AWS data store"],
   ["Identity boundary", "Managed Cognito", "Managed Cognito", "Customer Cognito user pool"],
   ["Retention controls", "Managed defaults", "Managed defaults", "Customer lifecycle policy"],
   ["Deployment artifact", "No", "No", "Terraform + Lambda packaging flow"],
@@ -237,6 +240,11 @@ const faqs = [
     answer:
       "Today the strongest fit is legal, HR, internal strategy, podcast/media production, and anyone handling sensitive or inconvenient audio that generic chat tools or meeting bots do not handle well.",
     question: "Who is this product really for?",
+  },
+  {
+    answer:
+      "Completed transcript pages now include a lightweight audit trail with lifecycle events such as job creation, retry, completion, failure, and soft delete. It is not a compliance system by itself, but it makes the workflow more reviewable than a black-box upload form.",
+    question: "Can I see what happened to a transcript job?",
   },
   {
     answer:

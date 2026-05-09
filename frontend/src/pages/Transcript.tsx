@@ -192,7 +192,12 @@ export function TranscriptPage() {
         </Card>
 
         {job?.status === "COMPLETED" && job.transcriptText && job.rawTranscript ? (
-          <TranscriptViewer jobId={job.jobId} rawTranscript={job.rawTranscript} transcriptText={job.transcriptText} />
+          <TranscriptViewer
+            auditTrail={job.auditTrail ?? []}
+            jobId={job.jobId}
+            rawTranscript={job.rawTranscript}
+            transcriptText={job.transcriptText}
+          />
         ) : null}
       </div>
     </AppShell>

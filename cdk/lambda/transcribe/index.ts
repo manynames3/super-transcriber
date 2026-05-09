@@ -11,6 +11,7 @@ import {
 } from "@aws-sdk/client-transcribe";
 import type { APIGatewayProxyHandlerV2 } from "aws-lambda";
 import {
+  createAuditEvent,
   errorResponse,
   extractAudioObjectDetailsFromS3Key,
   extractJobIdFromS3Key,
@@ -68,6 +69,12 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     const timestamp = Date.now();
     const transcribeJobName = `super-transcriber-${jobId}-${timestamp}`;
     const now = new Date().toISOString();
+    const transcribeStartedEvent = createAuditEvent(
+      "TRANSCRIBE_STARTED",
+      `Amazon Transcribe job ${transcribeJobName} started for ${audioObjectDetails.fileExtension.toUpperCase()} audio.`,
+      "SYSTEM",
+      now,
+    );
 
     const existingJob = await dynamo.send(
       new GetCommand({
@@ -127,6 +134,15 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             updatedAt: now,
             userId,
             wordCount: 0,
+            auditTrail: [
+              createAuditEvent(
+                "JOB_CREATED",
+                "Authenticated user created a transcription job from an uploaded audio file.",
+                "USER",
+                now,
+              ),
+              transcribeStartedEvent,
+            ],
           },
           ConditionExpression: "attribute_not_exists(PK) AND attribute_not_exists(SK)",
         }),
@@ -140,13 +156,23 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             SK: `JOB#${jobId}`,
           },
           UpdateExpression:
-            "SET #status = :status, transcribeJobName = :transcribeJobName, updatedAt = :updatedAt, deleted = :deleted, failureReason = :failureReason, fileName = :fileName, durationSeconds = :durationSeconds",
+            "SET #status = :status, transcribeJobName = :transcribeJobName, updatedAt = :updatedAt, deleted = :deleted, failureReason = :failureReason, fileName = :fileName, durationSeconds = :durationSeconds, auditTrail = list_append(if_not_exists(auditTrail, :emptyAuditTrail), :auditTrail)",
           ExpressionAttributeNames: {
             "#status": "status",
           },
           ExpressionAttributeValues: {
+            ":auditTrail": [
+              createAuditEvent(
+                "TRANSCRIBE_RETRIED",
+                `Retry started as Amazon Transcribe job ${transcribeJobName}.`,
+                "USER",
+                now,
+              ),
+              transcribeStartedEvent,
+            ],
             ":deleted": false,
             ":durationSeconds": durationSeconds,
+            ":emptyAuditTrail": [],
             ":failureReason": "",
             ":fileName": body.fileName,
             ":status": "PENDING",

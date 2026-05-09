@@ -20,6 +20,7 @@ This codebase already contains the pieces that make the enterprise angle credibl
 - direct browser-to-S3 uploads with authenticated API initiation
 - DynamoDB-backed job history instead of local-only state
 - explicit S3 lifecycle retention for uploads and transcripts
+- audit-friendly job lifecycle events on transcript detail pages
 - Terraform as the deployable infrastructure source of truth
 - a React product surface that can sell hosted and private-deployment plans from the same frontend
 
@@ -85,6 +86,8 @@ Charging model:
 - setup fee plus support retainer
 - or annual license plus implementation support
 
+See [Private Deployment Guide](private-deployment.md) for the current deployment package.
+
 ## Why This Angle Stands Out
 
 Most public transcription sites compete on:
@@ -123,7 +126,7 @@ Avoid unsupported claims:
 If this project evolves further, the highest-leverage enterprise additions would be:
 
 1. Customer-managed KMS support for buckets and DynamoDB.
-2. Admin controls and audit-friendly job activity surfaces.
+2. Admin controls and exportable audit reports.
 3. Configurable retention policies instead of fixed 3-day and 90-day defaults.
 4. A private-deployment onboarding flow and sales CTA.
 5. Stripe or contract-backed billing to make the subscription ladder real instead of presentational.

@@ -4,6 +4,21 @@ export const ULID_REGEX = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 export const SUPPORTED_AUDIO_EXTENSIONS = ["mp3", "m4a"] as const;
 
 export type SupportedAudioExtension = (typeof SUPPORTED_AUDIO_EXTENSIONS)[number];
+export type AuditActor = "SYSTEM" | "USER";
+export type AuditEventType =
+  | "JOB_CREATED"
+  | "TRANSCRIBE_STARTED"
+  | "TRANSCRIBE_RETRIED"
+  | "TRANSCRIBE_COMPLETED"
+  | "TRANSCRIBE_FAILED"
+  | "JOB_SOFT_DELETED";
+
+export interface AuditEvent {
+  actor: AuditActor;
+  createdAt: string;
+  eventType: AuditEventType;
+  message: string;
+}
 
 export interface ErrorBody {
   success: false;
@@ -27,6 +42,20 @@ export function errorResponse(statusCode: number, code: string, error: string) {
     error,
     code,
   } satisfies ErrorBody);
+}
+
+export function createAuditEvent(
+  eventType: AuditEventType,
+  message: string,
+  actor: AuditActor,
+  createdAt = new Date().toISOString(),
+): AuditEvent {
+  return {
+    actor,
+    createdAt,
+    eventType,
+    message,
+  };
 }
 
 export function getUserId(event: APIGatewayProxyEventV2): string | null {

@@ -7,6 +7,8 @@ Super Transcriber is a transcription product and deployable AWS stack for teams 
 - **Architecture docs:** [docs/architecture.md](docs/architecture.md)
 - **ADRs:** [docs/adrs/README.md](docs/adrs/README.md)
 - **Enterprise edition notes:** [docs/enterprise-edition.md](docs/enterprise-edition.md)
+- **Private deployment guide:** [docs/private-deployment.md](docs/private-deployment.md)
+- **Security notes:** [docs/security.md](docs/security.md)
 
 ## Backstory
 
@@ -31,6 +33,7 @@ The v2 product direction is not "more AI features for the sake of it." It is a s
 - **Hosted workspace:** start as a self-serve subscription with auth, upload, transcript history, and exports.
 - **Private deployment:** deploy the same Terraform-managed stack into a customer-owned AWS account so the buckets, user pool, and job metadata live inside their environment.
 - **Commercial ladder:** use the hosted product for fast adoption, then sell private deployment and implementation support to teams that care where the audio and transcripts live.
+- **Audit visibility:** expose job lifecycle events so teams can see when jobs were created, retried, completed, failed, or soft-deleted.
 
 That angle makes the differentiation less about generic "AI transcription" and more about explicit uploads, defined retention, and a customer-controlled data boundary.
 
@@ -73,6 +76,7 @@ Amazon support couldn't help. No time to reorder. I just needed to hear that pho
 - Custom auth without persistent browser token storage: access, ID, and refresh tokens live only in Zustand memory, and the fetch wrapper retries exactly once after a `401` by refreshing the session through Cognito.
 - Cost-aware UX: the client validates `.mp3` and `.m4a` extensions plus header bytes, enforces a 200 MB limit, extracts duration with the Web Audio API, and estimates variable Amazon Transcribe cost before submission.
 - Transcript-focused product UX: polling uses exponential backoff, diarized text is reformatted into speaker sections, large transcripts paginate into 2,500-word chunks, and users can copy or download `.txt` and raw `.json` output.
+- Enterprise-oriented audit visibility: job detail responses include lifecycle events stored with the DynamoDB job item, and the transcript UI renders them as a lightweight audit trail.
 
 ## Architecture
 
@@ -80,6 +84,8 @@ The system is split between a static frontend on Cloudflare Pages and a serverle
 
 - High-level architecture: [docs/architecture.md](docs/architecture.md)
 - Architectural decisions: [docs/adrs/README.md](docs/adrs/README.md)
+- Private deployment guide: [docs/private-deployment.md](docs/private-deployment.md)
+- Security and privacy notes: [docs/security.md](docs/security.md)
 
 ## Cost Profile
 
@@ -181,6 +187,7 @@ Copy `frontend/.env.example` to `frontend/.env` and fill it from Terraform outpu
 
 ```env
 VITE_API_BASE_URL=...
+VITE_COGNITO_USER_POOL_ID=...
 VITE_COGNITO_CLIENT_ID=...
 VITE_AWS_REGION=us-east-1
 ```

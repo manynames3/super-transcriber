@@ -1,7 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import type { APIGatewayProxyHandlerV2 } from "aws-lambda";
-import { errorResponse, getUserId, isValidJobId, jsonResponse } from "../shared";
+import { createAuditEvent, errorResponse, getUserId, isValidJobId, jsonResponse } from "../shared";
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const tableName = process.env.DYNAMODB_TABLE_NAME;
@@ -22,6 +22,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       return errorResponse(400, "INVALID_JOB_ID", "A valid jobId path parameter is required.");
     }
 
+    const now = new Date().toISOString();
+
     await dynamo.send(
       new UpdateCommand({
         TableName: tableName,
@@ -29,11 +31,21 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
           PK: `USER#${userId}`,
           SK: `JOB#${jobId}`,
         },
-        UpdateExpression: "SET deleted = :deleted, updatedAt = :updatedAt",
+        UpdateExpression:
+          "SET deleted = :deleted, updatedAt = :updatedAt, auditTrail = list_append(if_not_exists(auditTrail, :emptyAuditTrail), :auditTrail)",
         ConditionExpression: "attribute_exists(PK) AND attribute_exists(SK)",
         ExpressionAttributeValues: {
+          ":auditTrail": [
+            createAuditEvent(
+              "JOB_SOFT_DELETED",
+              "Authenticated user soft-deleted this job. S3 lifecycle policies handle object expiration.",
+              "USER",
+              now,
+            ),
+          ],
           ":deleted": true,
-          ":updatedAt": new Date().toISOString(),
+          ":emptyAuditTrail": [],
+          ":updatedAt": now,
         },
       }),
     );
