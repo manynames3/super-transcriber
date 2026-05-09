@@ -13,6 +13,15 @@ Super Transcriber is a cost-first transcription web app that lets authenticated 
 - Keeps cloud cost constraints explicit in the architecture: HTTP API over REST, Lambda on `arm64`, DynamoDB on-demand, S3 lifecycle cleanup, and no VPC or NAT.
 - Shows practical client and backend engineering details such as client-side audio header validation, duration-based cost preview, retryable polling, presigned uploads, and soft-delete job history.
 
+
+## Why This Exists
+
+My dad was heading out on a camping trip. I ordered him a large battery bank from Amazon. Plenty of time to arrive, or so I thought.
+The package carrier left a voicemail instead of the package. No notice label on the door. No delivery in the mailroom like every other carrier does. Just a voicemail with a callback number buried in a slurry and hurried repertoire speech.
+
+Amazon support couldn't help. No time to reorder. I just needed to hear that phone number clearly. I pulled up ChatGPT. Then Claude. Both started walking me through installing dependencies, downloading scripts, trying different approaches. A couple minutes in, still nothing working. My dad's trip wasn't going to wait. So inspired by that problem, I built this. You drag in an audio file. You get a transcript in seconds. Done.
+
+
 ## Tech Stack
 
 | Area | Technologies |
