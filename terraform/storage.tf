@@ -28,7 +28,7 @@ resource "aws_s3_bucket_cors_configuration" "uploads" {
   cors_rule {
     allowed_headers = ["Content-Type", "x-amz-acl", "x-amz-meta-*"]
     allowed_methods = ["PUT"]
-    allowed_origins = [var.allowed_origin]
+    allowed_origins = local.allowed_cors_origins
     max_age_seconds = 300
   }
 }
@@ -80,7 +80,7 @@ resource "aws_s3_bucket_cors_configuration" "transcripts" {
   cors_rule {
     allowed_headers = ["Content-Type"]
     allowed_methods = ["GET"]
-    allowed_origins = [var.allowed_origin]
+    allowed_origins = local.allowed_cors_origins
     max_age_seconds = 300
   }
 }

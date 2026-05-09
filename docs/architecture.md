@@ -75,11 +75,13 @@ flowchart LR
 - Terraform zips the bundled outputs from `terraform/dist/` into `.artifacts/` and deploys the Lambda functions.
 - `frontend/` builds the static SPA with Vite.
 - `.github/workflows/deploy-frontend.yml` deploys the frontend to Cloudflare Pages.
+- `.github/workflows/deploy-enterprise-frontend.yml` deploys the enterprise v2 frontend from `codex/enterprise-v2` to the separate `super-transcriber-ent` Cloudflare Pages project.
 - `docs/examples/deploy-aws.workflow.yml` is an optional AWS deploy workflow template that can be copied into `.github/workflows/` after OIDC setup.
 
 ## Key Constraints
 
 - Cost-first architecture: HTTP API, `arm64` Lambdas, DynamoDB `PAY_PER_REQUEST`, no VPC, no NAT Gateway, and S3 lifecycle cleanup.
+- API Gateway and S3 CORS can allow multiple Cloudflare Pages origins through `allowed_origin` plus `allowed_origins`.
 - MP3 and M4A ingestion with client-side extension, file-header, file-size, and duration validation.
 - Tokens are intentionally kept in memory only; no localStorage, sessionStorage, or cookies are used for Cognito session state.
 - The product is tuned for personal-scale traffic: active jobs are capped at 5 per user and job listings are paged.

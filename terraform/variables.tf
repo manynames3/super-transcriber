@@ -8,6 +8,17 @@ variable "allowed_origin" {
   }
 }
 
+variable "allowed_origins" {
+  description = "Additional HTTPS origins allowed for API Gateway and S3 CORS."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for origin in var.allowed_origins : can(regex("^https://", origin))])
+    error_message = "allowed_origins values must be https origins."
+  }
+}
+
 variable "aws_region" {
   description = "AWS region for the stack."
   type        = string

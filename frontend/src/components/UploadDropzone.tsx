@@ -138,7 +138,8 @@ export function UploadDropzone({ onUploaded }: UploadDropzoneProps) {
       <CardHeader className="border-b border-white/8 bg-transparent">
         <CardTitle>New transcription</CardTitle>
         <CardDescription>
-          MP3 or M4A, 200MB max, direct-to-S3 upload. Duration is shown before you spend Transcribe minutes.
+          MP3 or M4A, 200MB max, direct-to-S3 upload into private buckets. Duration is shown before
+          you spend Transcribe minutes.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6 pt-6">

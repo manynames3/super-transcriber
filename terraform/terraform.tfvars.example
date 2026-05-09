@@ -2,4 +2,5 @@ aws_region          = "us-east-1"
 environment         = "dev"
 project_name        = "super-transcriber"
 allowed_origin      = "https://your-app.pages.dev"
+allowed_origins     = ["https://your-enterprise-app.pages.dev"]
 dynamodb_table_name = "super-transcriber"

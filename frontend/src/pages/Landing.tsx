@@ -1,15 +1,21 @@
 import {
+  ArrowRight,
+  BadgeCheck,
+  Building2,
   Check,
-  CheckCircle2,
+  ChevronDown,
   Clock3,
   Copy,
+  Database,
   Download,
   FileAudio2,
   FileCode2,
   FileText,
-  History,
+  FolderLock,
+  LockKeyhole,
   Menu,
-  Shield,
+  Scale,
+  ShieldCheck,
   Users,
   X,
   Zap,
@@ -17,135 +23,239 @@ import {
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { BrandMark } from "../components/BrandMark";
-import { Button, buttonVariants } from "../components/ui/button";
-import { useAuthStore } from "../store/authStore";
 import { cn } from "../lib/utils";
+import { useAuthStore } from "../store/authStore";
+import { Button, buttonVariants } from "../components/ui/button";
 
-const plans = [
+interface PricingPlan {
+  badge?: string;
+  ctaClassName: string;
+  ctaLabel: string;
+  ctaType: "hosted" | "sales";
+  featured?: boolean;
+  name: string;
+  period?: string;
+  price: string;
+  pricePrefix?: string;
+  tagline: string;
+  tierClassName: string;
+  tierTone: "starter" | "pro" | "private";
+  features: string[];
+}
+
+const trustSignals = [
   {
-    badge: null,
+    label: "No meeting bot",
+    value: "Files are uploaded intentionally, not captured silently from calendars or calls.",
+  },
+  {
+    label: "Defined retention",
+    value: "Uploads expire after 3 days. Transcript artifacts expire after 90 days.",
+  },
+  {
+    label: "AWS primitives",
+    value: "Cognito, S3, Lambda, DynamoDB, EventBridge, and Amazon Transcribe.",
+  },
+  {
+    label: "Private deployment path",
+    value: "The same stack can be deployed into a customer-owned AWS account.",
+  },
+];
+
+const privacyPillars = [
+  {
+    description:
+      "The workflow is explicit upload, direct-to-S3 storage, and authenticated retrieval. There is no vendor-controlled meeting recorder joining calls behind the scenes.",
+    icon: <ShieldCheck className="h-5 w-5" />,
+    title: "No third-party meeting bot",
+  },
+  {
+    description:
+      "The repo already uses private S3 buckets, Cognito auth, and a Terraform-managed AWS stack, which makes customer-owned deployments a credible product option rather than hand-wavy enterprise copy.",
+    icon: <LockKeyhole className="h-5 w-5" />,
+    title: "Customer-owned deployment boundary",
+  },
+  {
+    description:
+      "Retention is implemented with actual lifecycle rules and soft-delete job history, so the product can talk about data handling in concrete terms instead of vague privacy promises.",
+    icon: <Database className="h-5 w-5" />,
+    title: "Retention is policy, not marketing",
+  },
+  {
+    description:
+      "The strongest fit is sensitive audio: legal intake, HR interviews, internal strategy, board reviews, and pre-release media that should not be tossed into a generic AI chat.",
+    icon: <Scale className="h-5 w-5" />,
+    title: "Built for sensitive workflows",
+  },
+];
+
+const outcomePoints = [
+  {
+    description:
+      "Review witness interviews, intake calls, and deposition prep audio without forwarding case material into a generic chat workflow.",
+    icon: <Scale className="h-5 w-5" />,
+    title: "Legal and investigations",
+  },
+  {
+    description:
+      "Handle performance reviews, investigation interviews, and manager notes with clearer retention windows and authenticated access.",
+    icon: <Users className="h-5 w-5" />,
+    title: "HR and people operations",
+  },
+  {
+    description:
+      "Keep internal briefings, board prep, and strategy calls in a controlled workflow with transcript exports that are easy to circulate.",
+    icon: <Building2 className="h-5 w-5" />,
+    title: "Finance and internal strategy",
+  },
+  {
+    description:
+      "Process podcast rough cuts, voicemail attachments, and pre-release media without relying on a chat UI that may or may not handle real-world files cleanly.",
+    icon: <FolderLock className="h-5 w-5" />,
+    title: "Studios and creators",
+  },
+];
+
+const deploymentModes = [
+  {
+    description:
+      "Fastest path for individual users and small teams. The managed product gives you auth, upload, transcript history, and export without infra work.",
+    eyebrow: "Hosted workspace",
+    title: "Start as a self-serve subscription",
+  },
+  {
+    description:
+      "Keep the same UI and workflow, but package it as an internal tool for recurring teams that need a clearer security and retention story than a generic transcription site.",
+    eyebrow: "Team plan",
+    title: "Upgrade into a governed workspace",
+  },
+  {
+    description:
+      "Deploy the Terraform stack into the customer's AWS account so their user pool, buckets, and job metadata live inside their environment instead of a vendor-owned one.",
+    eyebrow: "Private deployment",
+    title: "Move the data boundary into customer AWS",
+  },
+];
+
+const pricingPlans: PricingPlan[] = [
+  {
     ctaClassName: "bg-secondary text-secondary-foreground hover:bg-white/10",
-    ctaLabel: "Get started free",
-    name: "Free",
+    ctaLabel: "Start hosted free",
+    ctaType: "hosted",
+    name: "Starter",
     period: "/month",
     price: "0",
-    tagline: "For occasional use. No card required and no account expiration.",
+    pricePrefix: "$",
+    tagline: "Hosted workspace for proving the workflow before you commit to recurring usage or private deployment.",
     tierClassName: "bg-white/6 text-muted-foreground",
-    tierTone: "free" as const,
+    tierTone: "starter",
     features: [
       "3 transcripts per month",
-      "Up to 5 minutes audio length",
-      "Speaker diarization",
-      "Copy + .txt download",
+      "MP3 and M4A uploads",
+      "Speaker-labeled transcript view",
+      "Copy + .txt export",
       "Job history dashboard",
     ],
   },
   {
-    badge: "Most popular",
+    badge: "Most practical",
     ctaClassName:
       "bg-primary text-primary-foreground shadow-[0_0_40px_rgba(212,168,67,0.22)] hover:-translate-y-0.5 hover:bg-[#e0b34e]",
     ctaLabel: "Upgrade to Pro",
+    ctaType: "hosted",
     featured: true,
     name: "Pro",
     period: "/month",
-    price: "10",
-    tagline: "For journalists, researchers, creators, and small teams using transcription weekly.",
+    price: "29",
+    pricePrefix: "$",
+    tagline: "For recurring transcription work where you want a clean hosted product now without giving up the private-deployment upgrade path later.",
     tierClassName: "bg-[rgba(212,168,67,0.12)] text-primary",
-    tierTone: "pro" as const,
+    tierTone: "pro",
     features: [
-      "10 transcripts per month",
-      "Up to 10 minutes audio length",
+      "25 transcripts per month",
+      "Up to 20 minutes per file",
       "Speaker diarization",
-      "Copy + .txt + .json download",
-      "Priority processing queue",
-      "Email support",
+      "Copy + .txt + .json export",
+      "Priority processing + email support",
     ],
   },
   {
-    badge: null,
     ctaClassName:
-      "border border-[rgba(124,106,247,0.25)] bg-[rgba(124,106,247,0.12)] text-[rgb(154,139,255)] hover:bg-[rgba(124,106,247,0.18)]",
-    ctaLabel: "Get Max",
-    name: "Max",
-    period: "/month",
-    price: "25",
-    tagline: "For long-form content and teams running transcription constantly.",
-    tierClassName: "bg-[rgba(124,106,247,0.12)] text-[rgb(154,139,255)]",
-    tierTone: "max" as const,
+      "border border-[rgba(124,106,247,0.3)] bg-[rgba(124,106,247,0.12)] text-[rgb(182,170,255)] hover:bg-[rgba(124,106,247,0.18)]",
+    ctaLabel: "Talk to sales",
+    ctaType: "sales",
+    name: "Private Deployment",
+    price: "Custom",
+    tagline: "For legal, HR, finance, and internal teams that want the stack deployed into their own AWS account and governed like internal infrastructure.",
+    tierClassName: "bg-[rgba(124,106,247,0.12)] text-[rgb(182,170,255)]",
+    tierTone: "private",
     features: [
-      "25 transcripts per month",
-      "Up to 20 minutes audio length",
-      "Speaker diarization",
-      "Copy + .txt + .json download",
-      "Priority processing queue",
-      "Priority email support",
+      "Customer-owned AWS account",
+      "Customer Cognito user pool",
+      "Private S3 + DynamoDB data path",
+      "Terraform deployment package",
+      "Implementation and upgrade support",
     ],
   },
 ];
 
 const comparisonRows = [
-  ["Monthly transcripts", "3", "10", "25"],
-  ["Max audio length", "5 min", "10 min", "20 min"],
-  ["Speaker diarization", "✓", "✓", "✓"],
-  ["Copy to clipboard", "✓", "✓", "✓"],
-  ["Download .txt", "✓", "✓", "✓"],
-  ["Download raw .json", "—", "✓", "✓"],
-  ["Job history dashboard", "✓", "✓", "✓"],
-  ["Priority processing", "—", "✓", "✓"],
-  ["Email support", "—", "✓", "✓"],
-  ["Credit card required", "No", "Yes", "Yes"],
+  ["Delivery model", "Hosted", "Hosted", "Customer AWS account"],
+  ["Primary buyer", "Individuals", "Recurring teams", "Private or regulated teams"],
+  ["Monthly transcripts", "3", "25", "Contract-based"],
+  ["Source file support", "MP3, M4A", "MP3, M4A", "MP3, M4A"],
+  ["Speaker diarization", "2-speaker default", "2-speaker default", "2-speaker default"],
+  ["TXT export", "Yes", "Yes", "Yes"],
+  ["Raw JSON export", "No", "Yes", "Yes"],
+  ["Identity boundary", "Managed Cognito", "Managed Cognito", "Customer Cognito user pool"],
+  ["Retention controls", "Managed defaults", "Managed defaults", "Customer lifecycle policy"],
+  ["Deployment artifact", "No", "No", "Terraform + Lambda packaging flow"],
 ];
 
 const faqs = [
   {
     answer:
-      "Upload MP3 or M4A audio now. WAV and broader container support can be added later without changing the current backend shape.",
-    question: "What audio formats do you support?",
+      "General AI chat UIs are fine for lightweight text tasks, but real audio files often fail at the exact points that matter: file reading, sandbox restrictions, external model access, and opaque tool routing. This product exists to make that path deterministic instead of hopeful.",
+    question: "Why not just drop the audio into ChatGPT or Claude?",
   },
   {
     answer:
-      "Amazon Transcribe typically lands around 95–97% word accuracy on clear recordings. Crosstalk, poor mic quality, and heavy background noise reduce that.",
-    question: "How accurate is the transcription?",
+      "Hosted plans run in the managed deployment behind this product. Private Deployment uses the same core stack but deploys it into the customer's AWS account so their buckets, user pool, and job metadata live inside their environment.",
+    question: "What changes in the private-deployment edition?",
   },
   {
     answer:
-      "Most files complete in under two minutes. The transcript screen polls automatically and stops as soon as the job reaches a terminal state.",
-    question: "How long does transcription take?",
+      "For the hosted product, audio is stored in private S3 buckets and retrieved through authenticated routes. For the private-deployment edition, the stack is intended to be deployed into the customer's own AWS account so the storage boundary is theirs.",
+    question: "Does a third-party transcription SaaS keep my audio?",
   },
   {
     answer:
-      "We use Amazon Transcribe speaker diarization with two speaker labels enabled by default, which works best for interviews and turn-based conversations.",
-    question: "How does speaker detection work?",
+      "Yes. The cleanest commercial path is hosted first, private deployment second. Teams can prove the workflow in the hosted product, then move the stack into customer-owned AWS when security or procurement requires it.",
+    question: "Can I start hosted and move private later?",
   },
   {
     answer:
-      "The original upload is automatically deleted after 3 days. Transcript JSON is retained for 90 days and remains accessible from the dashboard during that window.",
-    question: "Do my uploads expire?",
+      "Today the strongest fit is legal, HR, internal strategy, podcast/media production, and anyone handling sensitive or inconvenient audio that generic chat tools or meeting bots do not handle well.",
+    question: "Who is this product really for?",
   },
   {
     answer:
-      "Yes. The pricing presentation is set up like a live SaaS product, and the plan tiers can map cleanly to future quota enforcement without redesigning the page.",
-    question: "Can I upgrade or cancel later?",
-  },
-  {
-    answer:
-      "Audio and transcript artifacts are stored in private S3 buckets, access is authenticated through Cognito JWTs, and the app does not use public object reads.",
-    question: "Is my data private?",
-  },
-  {
-    answer:
-      "The raw JSON contains the full Amazon Transcribe payload, including timestamps, confidence scores, punctuation, and word-level speaker labels.",
-    question: "What is the raw .json download for?",
+      "The current implementation deletes source uploads after 3 days and transcript artifacts after 90 days using S3 lifecycle rules. That gives the product an actual retention story instead of a vague promise.",
+    question: "What happens to uploads after transcription?",
   },
 ];
 
-const waveformHeights = [30, 45, 28, 60, 42, 75, 38, 55, 70, 35, 65, 48, 80, 42, 60, 38, 50, 72, 44, 58, 35, 68, 45, 78, 52, 40, 62, 47, 55, 33, 70, 48, 65, 38, 58, 44];
+const waveformHeights = [
+  30, 45, 28, 60, 42, 75, 38, 55, 70, 35, 65, 48, 80, 42, 60, 38, 50, 72, 44, 58, 35, 68, 45,
+  78, 52, 40, 62, 47, 55, 33, 70, 48, 65, 38, 58, 44,
+];
 
 export function LandingPage() {
   const session = useAuthStore((state) => state.session);
-  const ctaHref = session ? "/dashboard" : "/login";
-  const ctaLabel = session ? "Open app" : "Start for free";
+  const hostedCtaHref = session ? "/dashboard" : "/login";
+  const hostedCtaLabel = session ? "Open workspace" : "Start hosted free";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number>(0);
 
   useEffect(() => {
     const handleResize = () => {
@@ -165,9 +275,12 @@ export function LandingPage() {
           <a href="#top">
             <BrandMark />
           </a>
-          <nav className="hidden items-center gap-8 md:flex">
+          <nav className="hidden items-center gap-6 lg:flex">
             <a className="nav-link-premium" href="#how-it-works">
-              How it works
+              Workflow
+            </a>
+            <a className="nav-link-premium" href="#deployment">
+              Deployment
             </a>
             <a className="nav-link-premium" href="#pricing">
               Pricing
@@ -178,10 +291,10 @@ export function LandingPage() {
           </nav>
           <div className="hidden items-center gap-3 md:flex">
             <Link className="nav-link-premium" to={session ? "/dashboard" : "/login"}>
-              {session ? "Dashboard" : "Sign in"}
+              {session ? "Workspace" : "Sign in"}
             </Link>
-            <Link className={buttonVariants()} to={ctaHref}>
-              {ctaLabel}
+            <Link className={buttonVariants()} to={hostedCtaHref}>
+              {hostedCtaLabel}
             </Link>
           </div>
           <Button
@@ -199,40 +312,23 @@ export function LandingPage() {
           <div className="border-t border-white/8 md:hidden" id="mobile-site-nav">
             <div className="mx-auto max-w-7xl px-6 py-4">
               <nav className="flex flex-col gap-2">
-                <a
-                  className="nav-link-premium rounded-[12px] border border-white/8 bg-white/[0.02] px-4 py-3 text-left text-foreground"
-                  href="#how-it-works"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  How it works
-                </a>
-                <a
-                  className="nav-link-premium rounded-[12px] border border-white/8 bg-white/[0.02] px-4 py-3 text-left text-foreground"
-                  href="#pricing"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Pricing
-                </a>
-                <a
-                  className="nav-link-premium rounded-[12px] border border-white/8 bg-white/[0.02] px-4 py-3 text-left text-foreground"
-                  href="#faq"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  FAQ
-                </a>
+                <MobileNavLink href="#how-it-works" label="Workflow" onClick={() => setMobileMenuOpen(false)} />
+                <MobileNavLink href="#deployment" label="Deployment" onClick={() => setMobileMenuOpen(false)} />
+                <MobileNavLink href="#pricing" label="Pricing" onClick={() => setMobileMenuOpen(false)} />
+                <MobileNavLink href="#faq" label="FAQ" onClick={() => setMobileMenuOpen(false)} />
                 <Link
                   className="nav-link-premium rounded-[12px] border border-white/8 bg-white/[0.02] px-4 py-3 text-left text-foreground"
                   onClick={() => setMobileMenuOpen(false)}
                   to={session ? "/dashboard" : "/login"}
                 >
-                  {session ? "Dashboard" : "Sign in"}
+                  {session ? "Workspace" : "Sign in"}
                 </Link>
                 <Link
                   className={cn(buttonVariants(), "mt-2 w-full")}
                   onClick={() => setMobileMenuOpen(false)}
-                  to={ctaHref}
+                  to={hostedCtaHref}
                 >
-                  {ctaLabel}
+                  {hostedCtaLabel}
                 </Link>
               </nav>
             </div>
@@ -241,37 +337,43 @@ export function LandingPage() {
       </header>
 
       <main className="relative z-10" id="top">
-        <section className="mx-auto max-w-7xl px-6 pb-14 pt-6 md:pb-16 md:pt-8">
-          <div className="grid items-center gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:gap-8">
+        <section className="mx-auto max-w-7xl px-6 pb-12 pt-6 md:pb-16 md:pt-8">
+          <div className="grid items-center gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-8">
             <div className="text-center lg:text-left">
               <div className="hero-kicker mb-4">
                 <span className="hero-dot" />
-                Instant audio transcription
+                Hosted transcription now. Private deployment when policy requires it.
               </div>
-              <h1 className="hero-title max-w-4xl lg:max-w-none">
-                Your words,
+              <h1 className="hero-title max-w-5xl lg:max-w-none">
+                Transcription that can
                 <br />
-                <em>on the page</em>
+                <em>stay inside AWS</em>
                 <br />
-                in seconds.
+                instead of a generic AI chat.
               </h1>
               <p className="hero-copy mt-5 text-center lg:text-left">
-                Upload an MP3 or M4A. Get a clean, speaker-labeled transcript you can copy, download, or share, powered by Amazon&apos;s speech stack and packaged like a real product.
+                Upload MP3 or M4A audio, get a speaker-labeled transcript, and keep a clear storage,
+                retention, and deployment story. Start as a hosted subscription. Move the same stack
+                into customer-owned AWS when security or procurement asks for it.
               </p>
               <div className="mt-7 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
-                <Link className={cn(buttonVariants({ size: "lg" }), "px-8")} to={ctaHref}>
-                  {session ? "Open dashboard" : "Start for free"} →
+                <Link className={cn(buttonVariants({ size: "lg" }), "px-8")} to={hostedCtaHref}>
+                  {hostedCtaLabel}
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
-                <a className={cn(buttonVariants({ size: "lg", variant: "outline" }), "px-8")} href="#how-it-works">
-                  See how it works
+                <a
+                  className={cn(buttonVariants({ size: "lg", variant: "outline" }), "px-8")}
+                  href="#deployment"
+                >
+                  Explore private deployment
                 </a>
               </div>
               <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground md:text-sm lg:justify-start">
-                <span>No credit card required</span>
+                <span>No meeting bot</span>
                 <div className="hidden h-4 w-px bg-white/15 sm:block" />
-                <span>3 free transcripts/month</span>
+                <span>Explicit upload workflow</span>
                 <div className="hidden h-4 w-px bg-white/15 sm:block" />
-                <span>95%+ accuracy on clear audio</span>
+                <span>Private deployment path</span>
               </div>
             </div>
 
@@ -282,8 +384,8 @@ export function LandingPage() {
                     <FileAudio2 className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-foreground">interview_final.mp3</div>
-                    <div className="text-xs text-muted-foreground">4:32 · 8.2 MB</div>
+                    <div className="text-sm font-medium text-foreground">board-review.m4a</div>
+                    <div className="text-xs text-muted-foreground">6:14 · 11.8 MB</div>
                   </div>
                 </div>
                 <div className="inline-flex items-center gap-2 text-sm font-medium text-emerald-300">
@@ -292,12 +394,18 @@ export function LandingPage() {
                 </div>
               </div>
 
+              <div className="mb-4 flex flex-wrap gap-2">
+                <MetaChip label="Storage" value="Private S3 buckets" />
+                <MetaChip label="Identity" value="Cognito auth" />
+                <MetaChip label="Retention" value="3d / 90d lifecycle" />
+              </div>
+
               <div className="mb-4 flex h-12 items-center gap-1 md:h-14">
                 {waveformHeights.map((height, index) => (
                   <div
                     className={cn(
                       "flex-1 rounded-sm bg-white/8",
-                      index < 14 && "bg-primary shadow-[0_0_18px_rgba(212,168,67,0.18)]",
+                      index < 16 && "bg-primary shadow-[0_0_18px_rgba(212,168,67,0.18)]",
                     )}
                     key={index}
                     style={{ height: `${height}%` }}
@@ -306,12 +414,18 @@ export function LandingPage() {
               </div>
 
               <div className="rounded-[18px] border border-white/8 bg-[rgba(28,28,38,0.9)] p-4 font-mono text-[13px] leading-7 text-muted-foreground md:p-5 md:text-sm">
-                <div className="mb-3 text-[11px] uppercase tracking-[0.14em] text-[rgba(255,255,255,0.32)]">Transcript</div>
+                <div className="mb-3 text-[11px] uppercase tracking-[0.14em] text-[rgba(255,255,255,0.32)]">
+                  Transcript
+                </div>
                 <p>
-                  <span className="text-primary">[Speaker 1]:</span> The key insight from last quarter was that retention improved by nearly 40% once we simplified the onboarding flow.
+                  <span className="text-primary">[Speaker 1]:</span> Keep the workflow simple. The
+                  team needs a usable transcript, but the file should stay in a system with a clear
+                  storage and retention story.
                 </p>
                 <p className="mt-4">
-                  <span className="text-[rgb(154,139,255)]">[Speaker 2]:</span> Right, and that maps directly to what we saw in the cohort analysis. Users who completed setup in under three minutes had double the 30-day retention.
+                  <span className="text-[rgb(154,139,255)]">[Speaker 2]:</span> Right, and if
+                  policy changes later, we should be able to move the stack into the customer&apos;s
+                  AWS account without redesigning the product.
                 </p>
               </div>
 
@@ -319,121 +433,153 @@ export function LandingPage() {
                 <MarketingAction icon={<Copy className="h-3.5 w-3.5" />} label="Copy text" />
                 <MarketingAction icon={<Download className="h-3.5 w-3.5" />} label="Download .txt" />
                 <MarketingAction icon={<FileCode2 className="h-3.5 w-3.5" />} label="Download .json" />
-                <span className="ml-auto text-xs text-muted-foreground max-md:w-full max-md:pt-2">841 words · 4 min read</span>
+                <span className="ml-auto text-xs text-muted-foreground max-md:w-full max-md:pt-2">
+                  1,128 words · 6 min read
+                </span>
               </div>
             </div>
           </div>
         </section>
 
+        <section className="mx-auto grid max-w-7xl gap-4 px-6 pb-12 md:grid-cols-2 md:pb-16 xl:grid-cols-4">
+          {trustSignals.map((signal) => (
+            <div className="panel-soft rounded-[20px] p-5" key={signal.label}>
+              <div className="text-[11px] uppercase tracking-[0.16em] text-primary">{signal.label}</div>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">{signal.value}</p>
+            </div>
+          ))}
+        </section>
+
         <section className="mx-auto max-w-7xl px-6 py-14 md:py-20" id="how-it-works">
-          <div className="section-label">Process</div>
-          <h2 className="hero-title mt-3 max-w-[10ch] text-[28px] leading-[1.02] md:mt-4 md:max-w-3xl md:text-6xl">
-            Drag, drop,
-            <em> done.</em>
+          <div className="section-label">Workflow</div>
+          <h2 className="hero-title mt-3 max-w-[12ch] text-[30px] leading-[1.02] md:mt-4 md:max-w-4xl md:text-6xl">
+            Explicit upload,
+            <em> deterministic output.</em>
           </h2>
-          <p className="hero-copy mt-4 max-w-lg md:mt-5 md:max-w-2xl">
-            Three steps from audio file to polished transcript. No software to install and no workflow detours.
+          <p className="hero-copy mt-4 max-w-xl md:mt-5 md:max-w-2xl">
+            The workflow is intentionally boring in the best possible way: pick a file, validate it
+            in the browser, send it through a known AWS pipeline, and get back transcript artifacts
+            you can actually use.
           </p>
 
           <div className="mt-8 grid gap-px overflow-hidden rounded-[22px] border border-white/8 bg-white/8 md:mt-12 lg:mt-16 lg:grid-cols-3">
             <StepCard
-              description="Drag your audio file into the upload zone or click to browse. We show duration and estimated cost before submission."
+              description="Choose an MP3 or M4A file. The browser validates file header bytes, size, and duration before any network call."
               icon={<UploadGlyph />}
               number="01"
-              title="Upload your audio"
+              title="Validate in the client"
             />
             <StepCard
-              description="Amazon Transcribe analyzes the audio with speaker diarization. Most files finish in under two minutes."
+              description="Upload directly to S3, then start an async Amazon Transcribe job through authenticated API routes backed by Lambda and DynamoDB."
               icon={<Clock3 className="h-5 w-5" />}
               number="02"
-              title="We process it"
+              title="Process through AWS"
             />
             <StepCard
-              description="Your transcript appears with speaker labels, word count, and export options for copy, .txt, or raw .json."
+              description="Review speaker-labeled text, copy it, export it, or revisit it from the dashboard until lifecycle retention removes the artifacts."
               icon={<FileText className="h-5 w-5" />}
               number="03"
-              title="Copy or download"
+              title="Export under defined retention"
             />
           </div>
         </section>
 
         <section className="mx-auto max-w-7xl px-6 py-14 md:py-20">
-          <div className="section-label">Features</div>
-          <h2 className="hero-title mt-3 max-w-[11ch] text-[28px] leading-[1.02] md:mt-4 md:max-w-4xl md:text-6xl">
-            Everything you need,
-            <br />
-            <em>nothing you don&apos;t.</em>
+          <div className="section-label">Privacy-first by design</div>
+          <h2 className="hero-title mt-3 max-w-[12ch] text-[30px] leading-[1.02] md:mt-4 md:max-w-5xl md:text-6xl">
+            Sell the
+            <em> absence of vendor risk.</em>
           </h2>
 
           <div className="mt-8 grid gap-4 md:mt-12 md:gap-6 lg:mt-16 lg:grid-cols-2">
-            <FeatureCard
-              description="Powered by Amazon Transcribe, the same speech AI used at enterprise scale. Clear audio regularly exceeds 97% word accuracy."
-              icon={<CheckCircle2 className="h-5 w-5" />}
-              title="95%+ accuracy"
-            />
-            <FeatureCard
-              description="Automatically detects and labels different speakers in interviews, meetings, and two-person conversations."
-              icon={<Users className="h-5 w-5" />}
-              title="Speaker diarization"
-            />
-            <FeatureCard
-              description="Download a clean .txt transcript for editorial use or export raw .json with timestamps and confidence data."
-              icon={<Download className="h-5 w-5" />}
-              title="Multiple export formats"
-            />
-            <FeatureCard
-              description="Every transcript is saved to your dashboard so you can revisit, re-download, or delete jobs without re-uploading."
-              icon={<History className="h-5 w-5" />}
-              title="Full job history"
-            />
-            <div className="panel relative overflow-hidden rounded-[24px] border border-[rgba(212,168,67,0.2)] p-5 md:p-8 lg:col-span-2">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,168,67,0.1),transparent_55%)]" />
-              <div className="relative grid gap-5 md:gap-8 lg:grid-cols-2 lg:items-center">
-                <div>
-                  <FeatureCardIcon icon={<Shield className="h-5 w-5" />} />
-                  <h3 className="mt-4 text-xl font-medium tracking-[-0.02em] text-foreground md:mt-5 md:text-2xl">
-                    AWS-grade infrastructure, priced for humans
-                  </h3>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground md:mt-4 md:text-[15px] md:leading-7">
-                    Super Transcriber sits on Amazon Transcribe, S3, Lambda, DynamoDB, and Cognito, but presents them like a clean SaaS offer. The result is a credible monetized product surface with the economics of serverless infrastructure underneath it.
-                  </p>
-                </div>
-                <div className="rounded-[18px] border border-white/8 bg-[rgba(10,10,15,0.9)] p-4 font-mono text-[13px] leading-6 text-muted-foreground md:p-5 md:text-sm md:leading-7">
-                  <div>
-                    <span className="text-primary">POST</span> /transcribe
+            {privacyPillars.map((pillar) => (
+              <FeatureCard
+                description={pillar.description}
+                icon={pillar.icon}
+                key={pillar.title}
+                title={pillar.title}
+              />
+            ))}
+          </div>
+        </section>
+
+        <section className="border-y border-white/8 bg-[rgba(19,19,26,0.92)] px-6 py-14 md:py-20">
+          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+            <div>
+              <div className="section-label">Where this stands out</div>
+              <h2 className="hero-title mt-3 max-w-[12ch] text-[30px] leading-[1.02] md:mt-4 md:max-w-4xl md:text-6xl">
+                Built for teams that
+                <em> cannot shrug at the data boundary.</em>
+              </h2>
+              <p className="hero-copy mt-5 max-w-xl">
+                Generic transcription sites compete on summaries, chat, and integrations. This
+                product can compete on a cleaner storage path, a deployable AWS stack, and a more
+                credible story for sensitive audio.
+              </p>
+              <a
+                className={cn(buttonVariants({ variant: "outline", size: "lg" }), "mt-8 px-8")}
+                href="mailto:hello@supertranscriber.com?subject=Private%20Deployment%20Inquiry"
+              >
+                Discuss a private deployment
+              </a>
+            </div>
+            <div className="grid gap-4">
+              {outcomePoints.map((point) => (
+                <div className="panel-soft rounded-[22px] p-5 md:p-6" key={point.title}>
+                  <div className="flex items-start gap-4">
+                    <FeatureCardIcon icon={point.icon} />
+                    <div>
+                      <h3 className="text-lg font-medium tracking-[-0.02em] text-foreground">{point.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{point.description}</p>
+                    </div>
                   </div>
-                  <div className="text-[rgba(255,255,255,0.35)]">↳ Amazon Transcribe async job</div>
-                  <div className="text-[rgba(255,255,255,0.35)]">↳ Speaker diarization: enabled</div>
-                  <div className="text-[rgba(255,255,255,0.35)]">↳ Language: en-US</div>
-                  <div className="mt-4">
-                    <span className="text-emerald-300">STATUS</span> COMPLETED ✓
-                  </div>
-                  <div className="mt-4 text-[rgb(154,139,255)]">[Speaker 1]:</div>
-                  <div>&quot;The Q3 numbers are in, and...&quot;</div>
-                  <div className="mt-3 text-primary">[Speaker 2]:</div>
-                  <div>&quot;Hold on, let me pull up the deck.&quot;</div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
         </section>
 
-        <section className="border-y border-white/8 bg-[rgba(19,19,26,0.92)] px-6 py-24" id="pricing">
+        <section className="mx-auto max-w-7xl px-6 py-14 md:py-20" id="deployment">
+          <div className="section-label">Deployment models</div>
+          <h2 className="hero-title mt-3 max-w-[13ch] text-[30px] leading-[1.02] md:mt-4 md:max-w-5xl md:text-6xl">
+            Start hosted.
+            <em> Move private when policy requires it.</em>
+          </h2>
+          <p className="hero-copy mt-4 max-w-xl md:mt-5 md:max-w-3xl">
+            The commercial ladder matters as much as the tech. The same product can be sold as a
+            self-serve subscription, a governed team workspace, or a private deployment living in a
+            customer-owned AWS account.
+          </p>
+
+          <div className="mt-8 grid gap-4 md:mt-12 md:gap-6 lg:grid-cols-3">
+            {deploymentModes.map((mode) => (
+              <div className="panel rounded-[24px] p-6 md:p-8" key={mode.title}>
+                <div className="text-[11px] uppercase tracking-[0.16em] text-primary">{mode.eyebrow}</div>
+                <h3 className="mt-4 text-2xl font-medium tracking-[-0.03em] text-foreground">{mode.title}</h3>
+                <p className="mt-4 text-sm leading-7 text-muted-foreground">{mode.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="border-y border-white/8 bg-[rgba(19,19,26,0.92)] px-6 py-20" id="pricing">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <div className="section-label">Pricing</div>
               <h2 className="hero-title mt-4 text-4xl md:text-6xl">
-                Simple, transparent
+                Hosted subscription,
                 <br />
-                <em>pricing.</em>
+                <em> enterprise upgrade path.</em>
               </h2>
               <p className="hero-copy mx-auto mt-5 text-center">
-                Start free. Upgrade when you need more. The page reads like a live SaaS offer while preserving the current app behavior behind Cognito.
+                The subscription is the easy entry point. The enterprise story is the data boundary:
+                keep the hosted product for speed, or move the same stack into customer-owned AWS
+                when that becomes the blocking requirement.
               </p>
             </div>
 
             <div className="mt-16 grid gap-6 lg:grid-cols-3">
-              {plans.map((plan) => (
+              {pricingPlans.map((plan) => (
                 <div
                   className={cn(
                     "panel relative flex h-full flex-col rounded-[24px] p-8",
@@ -447,12 +593,19 @@ export function LandingPage() {
                     </div>
                   ) : null}
                   <div className="text-[13px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{plan.name}</div>
-                  <div className="mt-5 flex items-start gap-1">
-                    <span className="pt-2 text-xl text-muted-foreground">$</span>
-                    <span className="font-serif text-6xl leading-none tracking-[-0.04em] text-foreground">{plan.price}</span>
-                    <span className="self-end pb-1 text-sm text-muted-foreground">{plan.period}</span>
+                  <div className="mt-5 flex items-end gap-1">
+                    {plan.pricePrefix ? <span className="pb-2 text-xl text-muted-foreground">{plan.pricePrefix}</span> : null}
+                    <span
+                      className={cn(
+                        "leading-none tracking-[-0.04em] text-foreground",
+                        plan.price === "Custom" ? "text-4xl font-medium md:text-5xl" : "font-serif text-6xl",
+                      )}
+                    >
+                      {plan.price}
+                    </span>
+                    {plan.period ? <span className="pb-1 text-sm text-muted-foreground">{plan.period}</span> : null}
                   </div>
-                  <p className="mt-4 min-h-[48px] text-sm leading-6 text-muted-foreground">{plan.tagline}</p>
+                  <p className="mt-4 min-h-[72px] text-sm leading-6 text-muted-foreground">{plan.tagline}</p>
                   <div className="my-6 h-px bg-white/8" />
                   <ul className="flex-1 space-y-3">
                     {plan.features.map((feature) => (
@@ -464,15 +617,28 @@ export function LandingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Link className={cn("mt-8 block rounded-[10px] px-5 py-3 text-center text-sm font-medium", plan.ctaClassName)} to={ctaHref}>
-                    {plan.ctaLabel}
-                  </Link>
+                  {plan.ctaType === "hosted" ? (
+                    <Link
+                      className={cn("mt-8 block rounded-[10px] px-5 py-3 text-center text-sm font-medium", plan.ctaClassName)}
+                      to={hostedCtaHref}
+                    >
+                      {plan.ctaLabel}
+                    </Link>
+                  ) : (
+                    <a
+                      className={cn("mt-8 block rounded-[10px] px-5 py-3 text-center text-sm font-medium", plan.ctaClassName)}
+                      href="mailto:hello@supertranscriber.com?subject=Private%20Deployment%20Inquiry"
+                    >
+                      {plan.ctaLabel}
+                    </a>
+                  )}
                 </div>
               ))}
             </div>
 
             <p className="mt-10 text-center text-sm text-muted-foreground">
-              All plans include secure accounts, full job history, and no expiring credits. Questions?{" "}
+              Hosted plans are optimized for self-serve adoption. Private Deployment is the upgrade
+              path for teams that want customer-owned storage, identity, and retention controls.{" "}
               <a className="text-foreground underline decoration-white/20 underline-offset-4" href="mailto:hello@supertranscriber.com">
                 hello@supertranscriber.com
               </a>
@@ -483,9 +649,9 @@ export function LandingPage() {
         <section className="mx-auto max-w-7xl px-6 py-20">
           <div className="section-label">Compare</div>
           <h2 className="hero-title mt-4 text-4xl md:text-6xl">
-            Plan details,
+            Hosted and private,
             <br />
-            <em>side by side.</em>
+            <em> side by side.</em>
           </h2>
 
           <div className="mt-12 overflow-hidden rounded-[24px] border border-white/8">
@@ -493,18 +659,18 @@ export function LandingPage() {
               <thead>
                 <tr className="bg-[rgba(255,255,255,0.02)]">
                   <th className="px-5 py-4 text-left text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Feature</th>
-                  <th className="px-5 py-4 text-center text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Free</th>
+                  <th className="px-5 py-4 text-center text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Starter</th>
                   <th className="px-5 py-4 text-center text-[11px] uppercase tracking-[0.12em] text-primary">Pro</th>
-                  <th className="px-5 py-4 text-center text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Max</th>
+                  <th className="px-5 py-4 text-center text-[11px] uppercase tracking-[0.12em] text-[rgb(182,170,255)]">Private</th>
                 </tr>
               </thead>
               <tbody>
-                {comparisonRows.map(([label, free, pro, max]) => (
+                {comparisonRows.map(([label, starter, pro, enterprise]) => (
                   <tr className="border-t border-white/8 hover:bg-white/[0.02]" key={label}>
                     <td className="px-5 py-4 text-foreground">{label}</td>
-                    <td className="px-5 py-4 text-center text-muted-foreground">{free}</td>
+                    <td className="px-5 py-4 text-center text-muted-foreground">{starter}</td>
                     <td className="px-5 py-4 text-center text-primary">{pro}</td>
-                    <td className="px-5 py-4 text-center text-muted-foreground">{max}</td>
+                    <td className="px-5 py-4 text-center text-[rgb(182,170,255)]">{enterprise}</td>
                   </tr>
                 ))}
               </tbody>
@@ -515,34 +681,60 @@ export function LandingPage() {
         <section className="mx-auto max-w-7xl px-6 py-20" id="faq">
           <div className="section-label">FAQ</div>
           <h2 className="hero-title mt-4 text-4xl md:text-6xl">
-            Common <em>questions.</em>
+            Questions about the
+            <br />
+            <em> hosted and private models.</em>
           </h2>
-          <div className="mt-14 grid gap-6 lg:grid-cols-2">
-            {faqs.map((faq) => (
-              <div className="panel rounded-[20px] p-7" key={faq.question}>
-                <h3 className="text-base font-medium tracking-[-0.01em] text-foreground">{faq.question}</h3>
-                <p className="mt-3 text-sm leading-7 text-muted-foreground">{faq.answer}</p>
-              </div>
-            ))}
+
+          <div className="mt-12 rounded-[24px] border border-white/8 bg-[rgba(255,255,255,0.02)]">
+            {faqs.map((faq, index) => {
+              const isOpen = openFaqIndex === index;
+
+              return (
+                <div className="border-b border-white/8 last:border-b-0" key={faq.question}>
+                  <button
+                    className="flex w-full items-start justify-between gap-4 px-5 py-5 text-left md:px-7 md:py-6"
+                    onClick={() => setOpenFaqIndex(isOpen ? -1 : index)}
+                    type="button"
+                  >
+                    <span className="text-lg font-medium tracking-[-0.02em] text-foreground md:text-[22px]">
+                      {faq.question}
+                    </span>
+                    <ChevronDown className={cn("mt-1 h-5 w-5 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
+                  </button>
+                  {isOpen ? (
+                    <div className="px-5 pb-5 pr-10 text-sm leading-7 text-muted-foreground md:px-7 md:pb-6 md:pr-16">
+                      {faq.answer}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </section>
 
         <section className="mx-6 mb-20 rounded-[28px] border border-[rgba(212,168,67,0.2)] bg-[rgba(19,19,26,0.96)] px-6 py-16 text-center md:px-12">
-          <div className="mx-auto max-w-3xl">
+          <div className="mx-auto max-w-4xl">
             <h2 className="hero-title text-4xl md:text-6xl">
-              Ready to stop
+              Start as a subscription.
               <br />
-              <em>transcribing by hand?</em>
+              <em> Upgrade the deployment boundary later.</em>
             </h2>
             <p className="hero-copy mx-auto mt-5 text-center">
-              Join for free. No credit card. Your first 3 transcripts are on us, and the rest of the page already sells the upgrade path like a real SaaS business.
+              That is the whole point of the v2 positioning. The public product can win on speed and
+              usability now, then grow into a private-deployment offer for teams that care where the
+              audio, transcripts, and identity layer live.
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-              <Link className={cn(buttonVariants({ size: "lg" }), "px-8")} to={ctaHref}>
-                {session ? "Open dashboard" : "Start transcribing free"} →
+              <Link className={cn(buttonVariants({ size: "lg" }), "px-8")} to={hostedCtaHref}>
+                {hostedCtaLabel}
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
-              <a className={cn(buttonVariants({ size: "lg", variant: "outline" }), "px-8")} href="#pricing">
-                View pricing
+              <a
+                className={cn(buttonVariants({ size: "lg", variant: "outline" }), "px-8")}
+                href="mailto:hello@supertranscriber.com?subject=Private%20Deployment%20Inquiry"
+              >
+                Ask about private deployment
               </a>
             </div>
           </div>
@@ -552,6 +744,9 @@ export function LandingPage() {
       <footer className="mx-auto flex w-full max-w-7xl flex-col gap-4 border-t border-white/8 px-6 py-10 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
         <div>©2026 SUPREME AI VENTURES LLC</div>
         <div className="flex flex-wrap gap-6">
+          <a className="hover:text-foreground" href="#deployment">
+            Deployment
+          </a>
           <a className="hover:text-foreground" href="#pricing">
             Pricing
           </a>
@@ -559,7 +754,7 @@ export function LandingPage() {
             FAQ
           </a>
           <Link className="hover:text-foreground" to={session ? "/dashboard" : "/login"}>
-            {session ? "Dashboard" : "Sign in"}
+            {session ? "Workspace" : "Sign in"}
           </Link>
           <a className="hover:text-foreground" href="mailto:hello@supertranscriber.com">
             Contact
@@ -567,6 +762,26 @@ export function LandingPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function MobileNavLink({
+  href,
+  label,
+  onClick,
+}: {
+  href: string;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <a
+      className="nav-link-premium rounded-[12px] border border-white/8 bg-white/[0.02] px-4 py-3 text-left text-foreground"
+      href={href}
+      onClick={onClick}
+    >
+      {label}
+    </a>
   );
 }
 
@@ -642,6 +857,22 @@ function MarketingAction({
     <div className="inline-flex items-center gap-2 rounded-[9px] border border-white/12 bg-white/[0.02] px-3 py-2 text-xs font-medium text-muted-foreground">
       {icon}
       {label}
+    </div>
+  );
+}
+
+function MetaChip({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-[rgba(240,237,232,0.7)]">
+      <BadgeCheck className="h-3.5 w-3.5 text-primary" />
+      <span className="text-[rgba(255,255,255,0.4)]">{label}</span>
+      <span className="text-foreground">{value}</span>
     </div>
   );
 }

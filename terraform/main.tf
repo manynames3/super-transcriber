@@ -6,6 +6,7 @@ data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
 
 locals {
+  allowed_cors_origins  = distinct(concat([var.allowed_origin], var.allowed_origins))
   lambda_artifact_root  = "${path.module}/.artifacts"
   resource_prefix       = "${var.project_name}-${var.environment}"
   transcript_bucket_arn = "${aws_s3_bucket.transcripts.arn}/transcripts/*"

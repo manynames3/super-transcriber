@@ -1,0 +1,114 @@
+name: Deploy Enterprise Frontend
+
+on:
+  push:
+    branches:
+      - codex/enterprise-v2
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+      VITE_AWS_REGION: ${{ vars.VITE_AWS_REGION }}
+      VITE_COGNITO_CLIENT_ID: ${{ vars.VITE_COGNITO_CLIENT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate deploy configuration
+        run: |
+          missing=0
+
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+            echo "::error::Missing GitHub secret CLOUDFLARE_API_TOKEN"
+            missing=1
+          fi
+
+          if [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+            echo "::error::Missing GitHub secret CLOUDFLARE_ACCOUNT_ID"
+            missing=1
+          fi
+
+          if [ -z "${{ vars.VITE_API_BASE_URL }}" ]; then
+            echo "::error::Missing GitHub variable VITE_API_BASE_URL"
+            missing=1
+          fi
+
+          if [ -z "${{ vars.VITE_COGNITO_CLIENT_ID }}" ]; then
+            echo "::error::Missing GitHub variable VITE_COGNITO_CLIENT_ID"
+            missing=1
+          fi
+
+          if [ -z "${{ vars.VITE_AWS_REGION }}" ]; then
+            echo "::error::Missing GitHub variable VITE_AWS_REGION"
+            missing=1
+          fi
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Write frontend production env
+        working-directory: frontend
+        run: |
+          printf '%s\n' \
+            "VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}" \
+            "VITE_AWS_REGION=${{ vars.VITE_AWS_REGION }}" \
+            "VITE_COGNITO_CLIENT_ID=${{ vars.VITE_COGNITO_CLIENT_ID }}" \
+            > .env.production
+
+      - name: Build enterprise frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Verify frontend runtime env embedding
+        working-directory: frontend
+        run: |
+          js_file="$(find dist/assets -name '*.js' | head -n 1)"
+
+          if [ -z "$js_file" ]; then
+            echo "::error::Missing built frontend JavaScript asset"
+            exit 1
+          fi
+
+          grep -F "${{ vars.VITE_AWS_REGION }}" "$js_file" >/dev/null || {
+            echo "::error::Built bundle is missing VITE_AWS_REGION"
+            exit 1
+          }
+
+          grep -F "${{ vars.VITE_COGNITO_CLIENT_ID }}" "$js_file" >/dev/null || {
+            echo "::error::Built bundle is missing VITE_COGNITO_CLIENT_ID"
+            exit 1
+          }
+
+      - name: Ensure Cloudflare Pages project
+        working-directory: frontend
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          npx wrangler pages project create super-transcriber-ent --production-branch main || {
+            echo "Cloudflare Pages project may already exist; continuing to deploy."
+          }
+
+      - name: Deploy to Cloudflare Pages
+        working-directory: frontend
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx wrangler pages deploy dist --project-name super-transcriber-ent --branch main

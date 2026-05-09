@@ -1,14 +1,43 @@
 # Super Transcriber
 
-Super Transcriber is a cost-first transcription web app that lets authenticated users upload MP3 or M4A audio, send it through Amazon Transcribe, and review or export speaker-labeled transcripts from a polished React dashboard. The repository demonstrates a full-stack serverless build: custom Cognito auth, direct browser-to-S3 uploads, a Lambda + DynamoDB API, an EventBridge-driven completion pipeline, Terraform-managed AWS infrastructure, and Cloudflare Pages frontend hosting.
+Super Transcriber is a transcription product and deployable AWS stack for teams that want a cleaner data boundary than generic AI chat or meeting-bot tools. Users can upload MP3 or M4A audio, run it through Amazon Transcribe, and review speaker-labeled transcripts in a polished React workspace. The same codebase also supports a stronger v2 positioning: start as a hosted subscription, then move the stack into a customer-owned AWS account when security, procurement, or retention policy requires it.
 
 - **Live demo:** [super-transcriber.pages.dev](https://super-transcriber.pages.dev)
+- **Enterprise frontend:** [super-transcriber-ent.pages.dev](https://super-transcriber-ent.pages.dev)
 - **Architecture docs:** [docs/architecture.md](docs/architecture.md)
 - **ADRs:** [docs/adrs/README.md](docs/adrs/README.md)
+- **Enterprise edition notes:** [docs/enterprise-edition.md](docs/enterprise-edition.md)
+
+## Backstory
+
+This project started from a simple question: why not just drag a voicemail into a general AI chat and ask for a transcription? In practice, that workflow was unreliable. File handling, sandbox restrictions, model-access issues, and opaque tool routing all got in the way, especially for real-world `.m4a` voicemail attachments.
+
+Super Transcriber exists to make that path deterministic: upload the file, validate it in the browser, send it through a known transcription pipeline, and get back structured output you can actually use.
+
+**Example failure modes from general-purpose AI tools**
+
+ChatGPT routed the request through the wrong tool path instead of producing a usable transcript:
+
+![ChatGPT voicemail transcription failure](docs/images/backstory-chatgpt.png)
+
+Claude identified a possible transcription path, but the sandbox and external model access still blocked the task:
+
+![Claude voicemail transcription failure](docs/images/backstory-claude.png)
+
+## Enterprise Edition Direction
+
+The v2 product direction is not "more AI features for the sake of it." It is a stronger packaging of the architecture already in this repo:
+
+- **Hosted workspace:** start as a self-serve subscription with auth, upload, transcript history, and exports.
+- **Private deployment:** deploy the same Terraform-managed stack into a customer-owned AWS account so the buckets, user pool, and job metadata live inside their environment.
+- **Commercial ladder:** use the hosted product for fast adoption, then sell private deployment and implementation support to teams that care where the audio and transcripts live.
+
+That angle makes the differentiation less about generic "AI transcription" and more about explicit uploads, defined retention, and a customer-controlled data boundary.
 
 ## About
 
-- Built as a personal-scale SaaS-style product rather than a toy demo: landing page, auth, dashboard, job history, transcript viewer, and deployment workflows are all included.
+- Built as a product surface rather than a toy demo: landing page, auth, dashboard, job history, transcript viewer, and deployment workflows are all included.
+- Supports both a hosted SaaS-style product story and a private-deployment enterprise story using the same AWS stack and frontend.
 - Uses a custom Cognito login, registration, and email verification flow instead of Cognito Hosted UI.
 - Keeps cloud cost constraints explicit in the architecture: HTTP API over REST, Lambda on `arm64`, DynamoDB on-demand, S3 lifecycle cleanup, and no VPC or NAT.
 - Shows practical client and backend engineering details such as client-side audio header validation, duration-based cost preview, retryable polling, presigned uploads, and soft-delete job history.
@@ -100,7 +129,7 @@ cd cdk && npm ci
 cd ../frontend && npm ci
 ```
 
-2. Copy `terraform/terraform.tfvars.example` to `terraform/terraform.tfvars` and set `allowed_origin` to your Cloudflare Pages URL.
+2. Copy `terraform/terraform.tfvars.example` to `terraform/terraform.tfvars` and set `allowed_origin` to your hosted Cloudflare Pages URL. Add the enterprise Pages URL to `allowed_origins` if both frontends should use the same backend.
 
 3. Bundle Lambda artifacts:
 
@@ -208,6 +237,14 @@ Required repository variables:
 - `VITE_API_BASE_URL`
 - `VITE_COGNITO_CLIENT_ID`
 - `VITE_AWS_REGION`
+
+### Enterprise frontend deploy workflow
+
+File: `.github/workflows/deploy-enterprise-frontend.yml`
+
+This workflow runs from the `codex/enterprise-v2` branch and deploys the enterprise landing page to the separate Cloudflare Pages project `super-transcriber-ent`.
+
+It uses the same GitHub secrets and repository variables as the hosted frontend workflow.
 
 ## Privacy and Security Notes
 
