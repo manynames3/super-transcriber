@@ -15,6 +15,10 @@ const lambdaEntries = [
   ["jobs-list", "lambda/jobs-list/index.ts"],
   ["job-delete", "lambda/job-delete/index.ts"],
   ["completion", "lambda/completion/index.ts"],
+  ["billing-status", "lambda/billing-status/index.ts"],
+  ["billing-checkout", "lambda/billing-checkout/index.ts"],
+  ["stripe-webhook", "lambda/stripe-webhook/index.ts"],
+  ["enterprise-lead", "lambda/enterprise-lead/index.ts"],
 ];
 
 await rm(outputRoot, { recursive: true, force: true });

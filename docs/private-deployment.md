@@ -13,6 +13,8 @@ This is not a claim that the system is air-gapped or compliance-certified. Amazo
 - DynamoDB single-table job store with on-demand billing.
 - EventBridge rule for Amazon Transcribe completion events.
 - S3 lifecycle rules that expire uploads after 3 days and transcript JSON after 90 days by default.
+- Optional Stripe Checkout and webhook Lambdas for hosted subscription billing.
+- Public enterprise lead-capture route that stores private-deployment inquiries in DynamoDB.
 
 ## Customer-Owned Data Boundary
 
@@ -23,6 +25,8 @@ This is not a claim that the system is air-gapped or compliance-certified. Amazo
 | Transcribe job metadata | Customer AWS DynamoDB table |
 | Raw transcript JSON | Customer AWS S3 transcript bucket |
 | Transcript status events | Customer AWS DynamoDB job item audit trail |
+| Subscription and usage state | Customer AWS DynamoDB billing and usage items |
+| Enterprise inquiries | Customer AWS DynamoDB lead items |
 
 The hosted frontend can point at this private backend by setting the Vite environment variables to the customer's API Gateway and Cognito outputs.
 
@@ -53,6 +57,9 @@ environment     = "prod"
 project_name    = "super-transcriber"
 allowed_origin  = "https://your-pages-domain.pages.dev"
 allowed_origins = ["https://your-enterprise-pages-domain.pages.dev"]
+
+upload_retention_days     = 3
+transcript_retention_days = 90
 ```
 
 5. Initialize Terraform. Use the S3 backend for repeatable environments, or `-backend=false` for a local throwaway deployment:
@@ -83,6 +90,29 @@ VITE_AWS_REGION
 
 8. Redeploy the frontend so Vite bakes the variables into the static bundle.
 
+## Optional Hosted Billing
+
+Stripe is optional. If the Stripe variables are blank, free-plan enforcement remains active and checkout returns a configuration error instead of failing silently.
+
+```hcl
+app_base_url          = "https://your-enterprise-pages-domain.pages.dev"
+stripe_pro_price_id   = "price_..."
+stripe_secret_key     = "sk_..."
+stripe_webhook_secret = "whsec_..."
+```
+
+Configure the Stripe webhook endpoint to:
+
+```text
+https://your-api-id.execute-api.us-east-1.amazonaws.com/billing/stripe-webhook
+```
+
+The webhook updates the DynamoDB billing item for:
+
+- `checkout.session.completed`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+
 ## Enterprise Defaults
 
 The current defaults are intentionally simple and low-cost:
@@ -92,6 +122,8 @@ The current defaults are intentionally simple and low-cost:
 - API Gateway uses HTTP API instead of REST API.
 - Lambda runs on `arm64`.
 - Audio uploads go directly to S3 with presigned URLs instead of through Lambda.
+- Starter and Pro plan limits are enforced in Lambda before Amazon Transcribe starts.
+- Stripe and lead capture reuse Lambda and DynamoDB; there is no additional fixed-cost database or CRM service.
 
 ## Operational Notes
 

@@ -43,6 +43,44 @@ variable "project_name" {
   default     = "super-transcriber"
 }
 
+variable "app_base_url" {
+  description = "Public frontend base URL used for Stripe Checkout success and cancel redirects."
+  type        = string
+  default     = "https://super-transcriber-ent.pages.dev"
+}
+
+variable "stripe_pro_price_id" {
+  description = "Stripe recurring Price ID for the hosted Pro subscription."
+  type        = string
+  default     = ""
+}
+
+variable "stripe_secret_key" {
+  description = "Stripe secret key used by the checkout Lambda. Leave empty to disable self-serve checkout."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "stripe_webhook_secret" {
+  description = "Stripe webhook endpoint signing secret. Leave empty to disable webhook processing."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "upload_retention_days" {
+  description = "Number of days before uploaded source audio expires."
+  type        = number
+  default     = 3
+}
+
+variable "transcript_retention_days" {
+  description = "Number of days before transcript JSON artifacts expire."
+  type        = number
+  default     = 90
+}
+
 variable "transcript_bucket_name" {
   description = "Optional override for the transcript bucket name."
   type        = string

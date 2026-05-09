@@ -23,6 +23,8 @@ flowchart LR
         statusFn["Container\nJob Status Lambda\nReads DynamoDB + transcript S3 objects"]
         listFn["Container\nJobs List Lambda\nPaged user job history"]
         deleteFn["Container\nJob Delete Lambda\nSoft delete"]
+        billingFn["Container\nBilling Lambdas\nPlan status, Stripe Checkout, webhooks"]
+        leadFn["Container\nEnterprise Lead Lambda\nPrivate-deployment inquiries"]
         completionFn["Container\nCompletion Lambda\nPersists transcript JSON and final status"]
         jobs["Container\nDynamoDB\nSingle table for per-user jobs"]
         uploads["Container\nS3 uploads bucket\nPrivate audio storage"]
@@ -30,6 +32,7 @@ flowchart LR
         transcribe["Container\nAmazon Transcribe\nAsync batch transcription"]
         events["Container\nEventBridge\nTranscribe completion events"]
     end
+    stripe["External System\nStripe\nCheckout + subscription webhooks"]
 
     spa -->|"register / login / verify"| cognito
     spa -->|"Bearer JWT"| api
@@ -38,6 +41,8 @@ flowchart LR
     api --> statusFn
     api --> listFn
     api --> deleteFn
+    api --> billingFn
+    api --> leadFn
 
     spa -->|"PUT presigned URL"| uploads
     uploadFn --> jobs
@@ -54,6 +59,10 @@ flowchart LR
     statusFn --> transcribe
     listFn --> jobs
     deleteFn --> jobs
+    billingFn --> jobs
+    billingFn --> stripe
+    stripe -->|"signed webhook"| billingFn
+    leadFn --> jobs
 ```
 
 ## Runtime Flow
@@ -63,9 +72,17 @@ flowchart LR
 3. `POST /upload-url` checks the active-job cap in DynamoDB, generates a ULID-based job ID, and returns a presigned `PUT` URL for `uploads/{userId}/{jobId}/audio.{ext}`.
 4. The browser uploads the MP3 or M4A file directly to S3 with XHR progress reporting.
 5. `POST /transcribe` validates S3 key ownership, starts an async Amazon Transcribe job, and creates or updates the DynamoDB job record with audit events.
-6. The transcript page polls `GET /job/{jobId}` with exponential backoff. While the job is pending, the API can ask Amazon Transcribe for the live status.
-7. When Transcribe emits a completion event, EventBridge triggers the completion Lambda, which downloads the raw transcript JSON, stores it in the transcript bucket, and updates DynamoDB with final status, word count, and audit events.
-8. Once the job is completed, `GET /job/{jobId}` returns the raw transcript JSON, the formatted speaker-labeled transcript text, and the job audit trail.
+6. For new jobs, `POST /transcribe` checks the user's plan, file-duration limit, and monthly transcript usage before reserving usage and starting Transcribe.
+7. The transcript page polls `GET /job/{jobId}` with exponential backoff. While the job is pending, the API can ask Amazon Transcribe for the live status.
+8. When Transcribe emits a completion event, EventBridge triggers the completion Lambda, which downloads the raw transcript JSON, stores it in the transcript bucket, and updates DynamoDB with final status, word count, and audit events.
+9. Once the job is completed, `GET /job/{jobId}` returns the raw transcript JSON, the formatted speaker-labeled transcript text, and the job audit trail.
+
+## Billing and Lead Flow
+
+- `GET /billing/status` reads the user's billing item and current monthly usage item from DynamoDB.
+- `POST /billing/checkout` creates a Stripe Checkout session for the Pro plan when Stripe secrets and a Price ID are configured.
+- `POST /billing/stripe-webhook` is public but verifies Stripe's signature before updating subscription state.
+- `POST /enterprise-leads` stores private-deployment inquiries in DynamoDB without adding a CRM or email service.
 
 ## Deployment Shape
 
@@ -85,6 +102,8 @@ flowchart LR
 - MP3 and M4A ingestion with client-side extension, file-header, file-size, and duration validation.
 - Tokens are intentionally kept in memory only; no localStorage, sessionStorage, or cookies are used for Cognito session state.
 - Audit events are stored on each DynamoDB job item to avoid extra fixed infrastructure while still making lifecycle activity visible.
+- Billing and usage state reuse the existing DynamoDB table to avoid a second database or fixed monthly billing service.
+- Retention windows are Terraform variables with low-cost defaults of 3 days for uploads and 90 days for transcripts.
 - The product is tuned for personal-scale traffic: active jobs are capped at 5 per user and job listings are paged.
 - Speaker diarization is currently configured for two speakers in the request path and UI.
 - Amazon Transcribe availability is an external dependency of the target AWS account.

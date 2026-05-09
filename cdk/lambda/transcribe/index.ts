@@ -11,15 +11,22 @@ import {
 } from "@aws-sdk/client-transcribe";
 import type { APIGatewayProxyHandlerV2 } from "aws-lambda";
 import {
+  BILLING_SK,
+  type BillingPlanId,
   createAuditEvent,
+  currentUsagePeriod,
   errorResponse,
   extractAudioObjectDetailsFromS3Key,
   extractJobIdFromS3Key,
+  getBillingPlanLimits,
   formatDurationSeconds,
   getUserId,
+  isPaidSubscriptionStatus,
   isOwnedUploadKey,
   jsonResponse,
+  normalizeBillingPlan,
   parseJsonBody,
+  usageSkForPeriod,
 } from "../shared";
 
 interface TranscribeBody {
@@ -101,20 +108,60 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       return errorResponse(409, "JOB_ALREADY_ACTIVE", "This transcription job is already in progress.");
     }
 
-    await transcribe.send(
-      new StartTranscriptionJobCommand({
-        LanguageCode: "en-US",
-        Media: {
-          MediaFileUri: `s3://${uploadBucketName}/${body.s3Key}`,
-        },
-        MediaFormat: audioObjectDetails.mediaFormat,
-        Settings: {
-          MaxSpeakerLabels: speakerCount,
-          ShowSpeakerLabels: true,
-        },
-        TranscriptionJobName: transcribeJobName,
-      }),
-    );
+    let usageReserved = false;
+
+    if (!existingItem) {
+      const billingPlan = await getBillingPlan(userId);
+      const limits = getBillingPlanLimits(billingPlan);
+
+      if (durationSeconds > limits.maxDurationSeconds) {
+        return errorResponse(
+          402,
+          "PLAN_DURATION_LIMIT",
+          `${limits.label} allows audio files up to ${Math.round(limits.maxDurationSeconds / 60)} minutes. Upgrade to transcribe longer files.`,
+        );
+      }
+
+      try {
+        await reserveMonthlyUsage(userId, limits.monthlyTranscriptLimit);
+        usageReserved = true;
+      } catch (usageError) {
+        if ((usageError as { name?: string }).name === "ConditionalCheckFailedException") {
+          return errorResponse(
+            402,
+            "PLAN_TRANSCRIPT_LIMIT",
+            `${limits.label} includes ${limits.monthlyTranscriptLimit} transcripts per month. Upgrade to continue.`,
+          );
+        }
+        throw usageError;
+      }
+    }
+
+    try {
+      await transcribe.send(
+        new StartTranscriptionJobCommand({
+          LanguageCode: "en-US",
+          Media: {
+            MediaFileUri: `s3://${uploadBucketName}/${body.s3Key}`,
+          },
+          MediaFormat: audioObjectDetails.mediaFormat,
+          Settings: {
+            MaxSpeakerLabels: speakerCount,
+            ShowSpeakerLabels: true,
+          },
+          TranscriptionJobName: transcribeJobName,
+        }),
+      );
+    } catch (startError) {
+      if (usageReserved) {
+        try {
+          await releaseMonthlyUsage(userId);
+        } catch (releaseError) {
+          console.warn("failed to release reserved monthly usage", releaseError);
+        }
+      }
+      throw startError;
+    }
 
     if (!existingItem) {
       await dynamo.send(
@@ -199,3 +246,63 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     return errorResponse(500, "TRANSCRIBE_START_ERROR", message);
   }
 };
+
+async function getBillingPlan(userId: string): Promise<BillingPlanId> {
+  const result = await dynamo.send(
+    new GetCommand({
+      TableName: tableName,
+      Key: {
+        PK: `USER#${userId}`,
+        SK: BILLING_SK,
+      },
+    }),
+  );
+  const item = result.Item as { plan?: string; subscriptionStatus?: string } | undefined;
+  return item && isPaidSubscriptionStatus(item.subscriptionStatus) ? normalizeBillingPlan(item.plan) : "free";
+}
+
+async function reserveMonthlyUsage(userId: string, monthlyTranscriptLimit: number) {
+  const now = new Date().toISOString();
+  const period = currentUsagePeriod();
+
+  await dynamo.send(
+    new UpdateCommand({
+      TableName: tableName,
+      Key: {
+        PK: `USER#${userId}`,
+        SK: usageSkForPeriod(period),
+      },
+      UpdateExpression:
+        "SET createdAt = if_not_exists(createdAt, :now), periodKey = :periodKey, updatedAt = :now ADD transcriptsStarted :one",
+      ConditionExpression: "attribute_not_exists(transcriptsStarted) OR transcriptsStarted < :limit",
+      ExpressionAttributeValues: {
+        ":limit": monthlyTranscriptLimit,
+        ":now": now,
+        ":one": 1,
+        ":periodKey": period,
+      },
+    }),
+  );
+}
+
+async function releaseMonthlyUsage(userId: string) {
+  const now = new Date().toISOString();
+  const period = currentUsagePeriod();
+
+  await dynamo.send(
+    new UpdateCommand({
+      TableName: tableName,
+      Key: {
+        PK: `USER#${userId}`,
+        SK: usageSkForPeriod(period),
+      },
+      UpdateExpression: "SET updatedAt = :now ADD transcriptsStarted :negativeOne",
+      ConditionExpression: "attribute_exists(transcriptsStarted) AND transcriptsStarted > :zero",
+      ExpressionAttributeValues: {
+        ":negativeOne": -1,
+        ":now": now,
+        ":zero": 0,
+      },
+    }),
+  );
+}

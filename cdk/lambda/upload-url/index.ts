@@ -1,16 +1,22 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, GetCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { APIGatewayProxyHandlerV2 } from "aws-lambda";
 import { ulid } from "ulid";
 import {
+  BILLING_SK,
   buildUploadS3Key,
+  currentUsagePeriod,
   errorResponse,
+  getBillingPlanLimits,
   getUserId,
+  isPaidSubscriptionStatus,
   jsonResponse,
+  normalizeBillingPlan,
   normalizeSupportedAudioExtension,
   parseJsonBody,
+  usageSkForPeriod,
 } from "../shared";
 
 interface UploadUrlBody {
@@ -59,6 +65,44 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
     if ((activeJobs.Count ?? 0) >= 5) {
       return errorResponse(429, "ACTIVE_JOB_LIMIT", "You already have 5 active transcription jobs.");
+    }
+
+    const period = currentUsagePeriod();
+    const [billingResult, usageResult] = await Promise.all([
+      dynamo.send(
+        new GetCommand({
+          TableName: tableName,
+          Key: {
+            PK: `USER#${userId}`,
+            SK: BILLING_SK,
+          },
+        }),
+      ),
+      dynamo.send(
+        new GetCommand({
+          TableName: tableName,
+          Key: {
+            PK: `USER#${userId}`,
+            SK: usageSkForPeriod(period),
+          },
+        }),
+      ),
+    ]);
+
+    const billingItem = billingResult.Item as { plan?: string; subscriptionStatus?: string } | undefined;
+    const plan =
+      billingItem && isPaidSubscriptionStatus(billingItem.subscriptionStatus)
+        ? normalizeBillingPlan(billingItem.plan)
+        : "free";
+    const limits = getBillingPlanLimits(plan);
+    const transcriptsStarted = Number((usageResult.Item as { transcriptsStarted?: number } | undefined)?.transcriptsStarted ?? 0);
+
+    if (transcriptsStarted >= limits.monthlyTranscriptLimit) {
+      return errorResponse(
+        402,
+        "PLAN_TRANSCRIPT_LIMIT",
+        `${limits.label} includes ${limits.monthlyTranscriptLimit} transcripts per month. Upgrade to continue.`,
+      );
     }
 
     const jobId = ulid();

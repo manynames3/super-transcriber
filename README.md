@@ -34,6 +34,7 @@ The v2 product direction is not "more AI features for the sake of it." It is a s
 - **Private deployment:** deploy the same Terraform-managed stack into a customer-owned AWS account so the buckets, user pool, and job metadata live inside their environment.
 - **Commercial ladder:** use the hosted product for fast adoption, then sell private deployment and implementation support to teams that care where the audio and transcripts live.
 - **Audit visibility:** expose job lifecycle events so teams can see when jobs were created, retried, completed, failed, or soft-deleted.
+- **Subscription controls:** enforce free/pro usage limits in Lambda, with Stripe Checkout and webhook hooks ready when Stripe secrets are configured.
 
 That angle makes the differentiation less about generic "AI transcription" and more about explicit uploads, defined retention, and a customer-controlled data boundary.
 
@@ -68,6 +69,7 @@ Amazon support couldn't help. No time to reorder. I just needed to hear that pho
 | Infrastructure | Terraform for deployable infrastructure, CDK TypeScript used for Lambda source and bundling |
 | Hosting | Cloudflare Pages |
 | CI/CD | GitHub Actions, Cloudflare Wrangler, optional AWS OIDC workflow |
+| Billing | Stripe Checkout + webhooks, optional configuration with no fixed platform dependency |
 
 ## Engineering Highlights
 
@@ -76,7 +78,9 @@ Amazon support couldn't help. No time to reorder. I just needed to hear that pho
 - Custom auth without persistent browser token storage: access, ID, and refresh tokens live only in Zustand memory, and the fetch wrapper retries exactly once after a `401` by refreshing the session through Cognito.
 - Cost-aware UX: the client validates `.mp3` and `.m4a` extensions plus header bytes, enforces a 200 MB limit, extracts duration with the Web Audio API, and estimates variable Amazon Transcribe cost before submission.
 - Transcript-focused product UX: polling uses exponential backoff, diarized text is reformatted into speaker sections, large transcripts paginate into 2,500-word chunks, and users can copy or download `.txt` and raw `.json` output.
-- Enterprise-oriented audit visibility: job detail responses include lifecycle events stored with the DynamoDB job item, and the transcript UI renders them as a lightweight audit trail.
+- Enterprise-oriented audit visibility: job detail responses include lifecycle events stored with the DynamoDB job item, and the transcript UI renders and exports them as a lightweight audit trail.
+- Subscription-ready backend: plan status, usage tracking, Stripe Checkout, Stripe webhook processing, and Lambda-side plan enforcement are implemented without adding another database.
+- Enterprise lead capture: private-deployment inquiries are stored in DynamoDB through a public API route instead of relying on a mailto link or paid CRM.
 
 ## Architecture
 
@@ -99,6 +103,7 @@ The system is split between a static frontend on Cloudflare Pages and a serverle
 | S3 | Storage + requests | Lifecycle rules minimize retained data |
 | EventBridge | Per event | Negligible at this scale |
 | Amazon Transcribe | $0.024/min after free tier | Main variable cost driver |
+| Stripe | Per successful payment | No fixed monthly fee in the default integration |
 
 ## Repository Layout
 
@@ -136,6 +141,8 @@ cd ../frontend && npm ci
 ```
 
 2. Copy `terraform/terraform.tfvars.example` to `terraform/terraform.tfvars` and set `allowed_origin` to your hosted Cloudflare Pages URL. Add the enterprise Pages URL to `allowed_origins` if both frontends should use the same backend.
+
+Optional billing variables can stay blank during development. Free-plan enforcement still works; Stripe Checkout returns a clear configuration error until `stripe_secret_key`, `stripe_webhook_secret`, and `stripe_pro_price_id` are set.
 
 3. Bundle Lambda artifacts:
 
@@ -180,6 +187,27 @@ terraform output -raw cognito_user_pool_id
 terraform output -raw cognito_client_id
 terraform output -raw aws_region
 ```
+
+### Optional Stripe Setup
+
+1. Create a recurring Stripe Price for the Pro plan.
+2. Set `stripe_pro_price_id` in `terraform.tfvars`.
+3. Store `stripe_secret_key` and `stripe_webhook_secret` in `terraform.tfvars` or a secure CI variable source.
+4. Configure the Stripe webhook endpoint to:
+
+```text
+https://your-api-id.execute-api.us-east-1.amazonaws.com/billing/stripe-webhook
+```
+
+Handled events:
+
+- `checkout.session.completed`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+
+If Stripe is not configured, the dashboard still shows plan usage and the backend enforces Starter limits.
+
+Stripe secrets are Lambda environment variables managed by Terraform, so protect Terraform state accordingly.
 
 ## Frontend Setup
 
@@ -242,6 +270,7 @@ Required secrets:
 Required repository variables:
 
 - `VITE_API_BASE_URL`
+- `VITE_COGNITO_USER_POOL_ID`
 - `VITE_COGNITO_CLIENT_ID`
 - `VITE_AWS_REGION`
 

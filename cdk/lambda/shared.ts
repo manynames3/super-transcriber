@@ -2,10 +2,14 @@ import type { APIGatewayProxyEventV2, APIGatewayProxyEventV2WithJWTAuthorizer } 
 
 export const ULID_REGEX = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 export const SUPPORTED_AUDIO_EXTENSIONS = ["mp3", "m4a"] as const;
+export const BILLING_SK = "BILLING#CURRENT";
 
 export type SupportedAudioExtension = (typeof SUPPORTED_AUDIO_EXTENSIONS)[number];
+export type BillingPlanId = "free" | "private" | "pro";
 export type AuditActor = "SYSTEM" | "USER";
 export type AuditEventType =
+  | "BILLING_CHECKOUT_STARTED"
+  | "BILLING_SUBSCRIPTION_UPDATED"
   | "JOB_CREATED"
   | "TRANSCRIBE_STARTED"
   | "TRANSCRIBE_RETRIED"
@@ -25,6 +29,37 @@ export interface ErrorBody {
   error: string;
   code: string;
 }
+
+export interface BillingPlanLimits {
+  maxDurationSeconds: number;
+  monthlyTranscriptLimit: number;
+}
+
+export interface BillingPlanConfig extends BillingPlanLimits {
+  label: string;
+  plan: BillingPlanId;
+}
+
+export const BILLING_PLAN_CONFIGS: Record<BillingPlanId, BillingPlanConfig> = {
+  free: {
+    label: "Starter",
+    maxDurationSeconds: 5 * 60,
+    monthlyTranscriptLimit: 3,
+    plan: "free",
+  },
+  private: {
+    label: "Private Deployment",
+    maxDurationSeconds: 4 * 60 * 60,
+    monthlyTranscriptLimit: 1000,
+    plan: "private",
+  },
+  pro: {
+    label: "Pro",
+    maxDurationSeconds: 20 * 60,
+    monthlyTranscriptLimit: 25,
+    plan: "pro",
+  },
+};
 
 export function jsonResponse(statusCode: number, body: unknown) {
   return {
@@ -66,6 +101,14 @@ export function getUserId(event: APIGatewayProxyEventV2): string | null {
   return sub && sub.trim().length > 0 ? sub : null;
 }
 
+export function getUserEmail(event: APIGatewayProxyEventV2): string | null {
+  const requestContext =
+    event.requestContext as APIGatewayProxyEventV2WithJWTAuthorizer["requestContext"];
+  const claims = requestContext.authorizer?.jwt?.claims;
+  const email = typeof claims?.email === "string" ? claims.email : null;
+  return email && email.trim().length > 0 ? email : null;
+}
+
 export function parseJsonBody<T>(body: string | undefined | null): T | null {
   if (!body) {
     return null;
@@ -80,6 +123,26 @@ export function parseJsonBody<T>(body: string | undefined | null): T | null {
 
 export function isValidJobId(jobId: string): boolean {
   return ULID_REGEX.test(jobId);
+}
+
+export function currentUsagePeriod(date = new Date()): string {
+  return date.toISOString().slice(0, 7);
+}
+
+export function usageSkForPeriod(period: string): string {
+  return `USAGE#${period}`;
+}
+
+export function normalizeBillingPlan(value: unknown): BillingPlanId {
+  return value === "pro" || value === "private" ? value : "free";
+}
+
+export function getBillingPlanLimits(plan: BillingPlanId): BillingPlanConfig {
+  return BILLING_PLAN_CONFIGS[plan];
+}
+
+export function isPaidSubscriptionStatus(status: unknown): boolean {
+  return status === "active" || status === "trialing" || status === "private_active";
 }
 
 export function isOwnedUploadKey(userId: string, s3Key: string): boolean {

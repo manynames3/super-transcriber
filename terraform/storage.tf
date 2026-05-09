@@ -45,7 +45,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
     }
 
     expiration {
-      days = 3
+      days = var.upload_retention_days
     }
   }
 }
@@ -97,7 +97,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "transcripts" {
     }
 
     expiration {
-      days = 90
+      days = var.transcript_retention_days
     }
   }
 }

@@ -84,3 +84,30 @@ export async function apiRequest<T>(
 
   return (await response.json()) as T;
 }
+
+export async function publicApiRequest<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  if (!apiBaseUrl) {
+    throw new Error("Missing VITE_API_BASE_URL.");
+  }
+
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    ...options,
+    headers: {
+      ...(options.headers ?? {}),
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw await readError(response);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return (await response.json()) as T;
+}

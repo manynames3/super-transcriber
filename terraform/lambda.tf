@@ -34,6 +34,30 @@ data "archive_file" "completion" {
   output_path = "${local.lambda_artifact_root}/completion.zip"
 }
 
+data "archive_file" "billing_status" {
+  type        = "zip"
+  source_dir  = "${path.module}/dist/billing-status"
+  output_path = "${local.lambda_artifact_root}/billing-status.zip"
+}
+
+data "archive_file" "billing_checkout" {
+  type        = "zip"
+  source_dir  = "${path.module}/dist/billing-checkout"
+  output_path = "${local.lambda_artifact_root}/billing-checkout.zip"
+}
+
+data "archive_file" "stripe_webhook" {
+  type        = "zip"
+  source_dir  = "${path.module}/dist/stripe-webhook"
+  output_path = "${local.lambda_artifact_root}/stripe-webhook.zip"
+}
+
+data "archive_file" "enterprise_lead" {
+  type        = "zip"
+  source_dir  = "${path.module}/dist/enterprise-lead"
+  output_path = "${local.lambda_artifact_root}/enterprise-lead.zip"
+}
+
 data "aws_iam_policy_document" "lambda_assume_role" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -58,7 +82,10 @@ resource "aws_iam_role_policy_attachment" "upload_url_basic" {
 
 data "aws_iam_policy_document" "upload_url" {
   statement {
-    actions   = ["dynamodb:Query"]
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:Query",
+    ]
     resources = [aws_dynamodb_table.jobs.arn]
   }
 
@@ -361,6 +388,188 @@ resource "aws_lambda_function" "completion" {
     variables = {
       DYNAMODB_TABLE_NAME    = aws_dynamodb_table.jobs.name
       TRANSCRIPT_BUCKET_NAME = aws_s3_bucket.transcripts.bucket
+    }
+  }
+
+  tags = local.tags
+}
+
+resource "aws_iam_role" "billing_status" {
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
+  name               = "${local.resource_prefix}-billing-status-role"
+  tags               = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "billing_status_basic" {
+  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  role       = aws_iam_role.billing_status.name
+}
+
+data "aws_iam_policy_document" "billing_status" {
+  statement {
+    actions   = ["dynamodb:GetItem"]
+    resources = [aws_dynamodb_table.jobs.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "billing_status" {
+  name   = "${local.resource_prefix}-billing-status-policy"
+  policy = data.aws_iam_policy_document.billing_status.json
+  role   = aws_iam_role.billing_status.id
+}
+
+resource "aws_lambda_function" "billing_status" {
+  architectures    = ["arm64"]
+  filename         = data.archive_file.billing_status.output_path
+  function_name    = "${local.resource_prefix}-billing-status"
+  handler          = "index.handler"
+  memory_size      = 512
+  role             = aws_iam_role.billing_status.arn
+  runtime          = "nodejs20.x"
+  source_code_hash = data.archive_file.billing_status.output_base64sha256
+  timeout          = 30
+
+  environment {
+    variables = {
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.jobs.name
+      STRIPE_PRO_PRICE_ID = var.stripe_pro_price_id != "" ? var.stripe_pro_price_id : "not_configured"
+      STRIPE_SECRET_KEY   = var.stripe_secret_key != "" ? var.stripe_secret_key : "not_configured"
+    }
+  }
+
+  tags = local.tags
+}
+
+resource "aws_iam_role" "billing_checkout" {
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
+  name               = "${local.resource_prefix}-billing-checkout-role"
+  tags               = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "billing_checkout_basic" {
+  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  role       = aws_iam_role.billing_checkout.name
+}
+
+data "aws_iam_policy_document" "billing_checkout" {
+  statement {
+    actions   = ["dynamodb:UpdateItem"]
+    resources = [aws_dynamodb_table.jobs.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "billing_checkout" {
+  name   = "${local.resource_prefix}-billing-checkout-policy"
+  policy = data.aws_iam_policy_document.billing_checkout.json
+  role   = aws_iam_role.billing_checkout.id
+}
+
+resource "aws_lambda_function" "billing_checkout" {
+  architectures    = ["arm64"]
+  filename         = data.archive_file.billing_checkout.output_path
+  function_name    = "${local.resource_prefix}-billing-checkout"
+  handler          = "index.handler"
+  memory_size      = 512
+  role             = aws_iam_role.billing_checkout.arn
+  runtime          = "nodejs20.x"
+  source_code_hash = data.archive_file.billing_checkout.output_base64sha256
+  timeout          = 30
+
+  environment {
+    variables = {
+      APP_BASE_URL        = var.app_base_url
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.jobs.name
+      STRIPE_PRO_PRICE_ID = var.stripe_pro_price_id != "" ? var.stripe_pro_price_id : "not_configured"
+      STRIPE_SECRET_KEY   = var.stripe_secret_key != "" ? var.stripe_secret_key : "not_configured"
+    }
+  }
+
+  tags = local.tags
+}
+
+resource "aws_iam_role" "stripe_webhook" {
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
+  name               = "${local.resource_prefix}-stripe-webhook-role"
+  tags               = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "stripe_webhook_basic" {
+  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  role       = aws_iam_role.stripe_webhook.name
+}
+
+data "aws_iam_policy_document" "stripe_webhook" {
+  statement {
+    actions   = ["dynamodb:UpdateItem"]
+    resources = [aws_dynamodb_table.jobs.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "stripe_webhook" {
+  name   = "${local.resource_prefix}-stripe-webhook-policy"
+  policy = data.aws_iam_policy_document.stripe_webhook.json
+  role   = aws_iam_role.stripe_webhook.id
+}
+
+resource "aws_lambda_function" "stripe_webhook" {
+  architectures    = ["arm64"]
+  filename         = data.archive_file.stripe_webhook.output_path
+  function_name    = "${local.resource_prefix}-stripe-webhook"
+  handler          = "index.handler"
+  memory_size      = 512
+  role             = aws_iam_role.stripe_webhook.arn
+  runtime          = "nodejs20.x"
+  source_code_hash = data.archive_file.stripe_webhook.output_base64sha256
+  timeout          = 30
+
+  environment {
+    variables = {
+      DYNAMODB_TABLE_NAME   = aws_dynamodb_table.jobs.name
+      STRIPE_WEBHOOK_SECRET = var.stripe_webhook_secret != "" ? var.stripe_webhook_secret : "not_configured"
+    }
+  }
+
+  tags = local.tags
+}
+
+resource "aws_iam_role" "enterprise_lead" {
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
+  name               = "${local.resource_prefix}-enterprise-lead-role"
+  tags               = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "enterprise_lead_basic" {
+  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  role       = aws_iam_role.enterprise_lead.name
+}
+
+data "aws_iam_policy_document" "enterprise_lead" {
+  statement {
+    actions   = ["dynamodb:PutItem"]
+    resources = [aws_dynamodb_table.jobs.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "enterprise_lead" {
+  name   = "${local.resource_prefix}-enterprise-lead-policy"
+  policy = data.aws_iam_policy_document.enterprise_lead.json
+  role   = aws_iam_role.enterprise_lead.id
+}
+
+resource "aws_lambda_function" "enterprise_lead" {
+  architectures    = ["arm64"]
+  filename         = data.archive_file.enterprise_lead.output_path
+  function_name    = "${local.resource_prefix}-enterprise-lead"
+  handler          = "index.handler"
+  memory_size      = 512
+  role             = aws_iam_role.enterprise_lead.arn
+  runtime          = "nodejs20.x"
+  source_code_hash = data.archive_file.enterprise_lead.output_base64sha256
+  timeout          = 30
+
+  environment {
+    variables = {
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.jobs.name
     }
   }
 

@@ -20,12 +20,16 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { BrandMark } from "../components/BrandMark";
+import { publicApiRequest } from "../lib/api";
 import { cn } from "../lib/utils";
 import { useAuthStore } from "../store/authStore";
 import { Button, buttonVariants } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
 
 interface PricingPlan {
   badge?: string;
@@ -526,7 +530,7 @@ export function LandingPage() {
               </p>
               <a
                 className={cn(buttonVariants({ variant: "outline", size: "lg" }), "mt-8 px-8")}
-                href="mailto:hello@supertranscriber.com?subject=Private%20Deployment%20Inquiry"
+                href="#enterprise-lead"
               >
                 Discuss a private deployment
               </a>
@@ -635,7 +639,7 @@ export function LandingPage() {
                   ) : (
                     <a
                       className={cn("mt-8 block rounded-[10px] px-5 py-3 text-center text-sm font-medium", plan.ctaClassName)}
-                      href="mailto:hello@supertranscriber.com?subject=Private%20Deployment%20Inquiry"
+                      href="#enterprise-lead"
                     >
                       {plan.ctaLabel}
                     </a>
@@ -721,6 +725,25 @@ export function LandingPage() {
           </div>
         </section>
 
+        <section className="mx-auto max-w-7xl px-6 py-20" id="enterprise-lead">
+          <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+            <div>
+              <div className="section-label">Private deployment inquiry</div>
+              <h2 className="hero-title mt-4 text-4xl md:text-6xl">
+                Turn the product into
+                <br />
+                <em> customer-owned infrastructure.</em>
+              </h2>
+              <p className="hero-copy mt-5">
+                This form stores an enterprise lead in DynamoDB instead of relying on a mailto link.
+                It is intentionally lightweight: no CRM subscription, no extra database, no fixed
+                monthly cost.
+              </p>
+            </div>
+            <EnterpriseLeadForm />
+          </div>
+        </section>
+
         <section className="mx-6 mb-20 rounded-[28px] border border-[rgba(212,168,67,0.2)] bg-[rgba(19,19,26,0.96)] px-6 py-16 text-center md:px-12">
           <div className="mx-auto max-w-4xl">
             <h2 className="hero-title text-4xl md:text-6xl">
@@ -740,7 +763,7 @@ export function LandingPage() {
               </Link>
               <a
                 className={cn(buttonVariants({ size: "lg", variant: "outline" }), "px-8")}
-                href="mailto:hello@supertranscriber.com?subject=Private%20Deployment%20Inquiry"
+                href="#enterprise-lead"
               >
                 Ask about private deployment
               </a>
@@ -770,6 +793,123 @@ export function LandingPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function EnterpriseLeadForm() {
+  const [company, setCompany] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [name, setName] = useState("");
+  const [status, setStatus] = useState<"error" | "idle" | "success" | "submitting">("idle");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [timeline, setTimeline] = useState("Exploring");
+  const [useCase, setUseCase] = useState("Legal / investigations");
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setStatus("submitting");
+    setStatusMessage("");
+
+    try {
+      await publicApiRequest<{ leadId: string; success: true }>("/enterprise-leads", {
+        body: JSON.stringify({
+          company,
+          email,
+          message,
+          name,
+          timeline,
+          useCase,
+        }),
+        method: "POST",
+      });
+      setStatus("success");
+      setStatusMessage("Inquiry received. I’ll follow up about the private deployment path.");
+      setCompany("");
+      setEmail("");
+      setMessage("");
+      setName("");
+    } catch (error) {
+      setStatus("error");
+      setStatusMessage(error instanceof Error ? error.message : "Unable to submit inquiry.");
+    }
+  };
+
+  return (
+    <form className="panel rounded-[28px] p-6 md:p-8" onSubmit={(event) => void handleSubmit(event)}>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="enterprise-name">Name</Label>
+          <Input id="enterprise-name" onChange={(event) => setName(event.target.value)} required value={name} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="enterprise-email">Work email</Label>
+          <Input
+            id="enterprise-email"
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            type="email"
+            value={email}
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        <Label htmlFor="enterprise-company">Company</Label>
+        <Input id="enterprise-company" onChange={(event) => setCompany(event.target.value)} required value={company} />
+      </div>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="enterprise-use-case">Primary use case</Label>
+          <select
+            className="flex h-11 w-full rounded-2xl border border-input bg-[rgba(255,255,255,0.03)] px-4 py-2 text-sm text-foreground shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            id="enterprise-use-case"
+            onChange={(event) => setUseCase(event.target.value)}
+            value={useCase}
+          >
+            <option>Legal / investigations</option>
+            <option>HR / people operations</option>
+            <option>Finance / internal strategy</option>
+            <option>Media / podcast production</option>
+            <option>Other sensitive audio</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="enterprise-timeline">Timeline</Label>
+          <select
+            className="flex h-11 w-full rounded-2xl border border-input bg-[rgba(255,255,255,0.03)] px-4 py-2 text-sm text-foreground shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            id="enterprise-timeline"
+            onChange={(event) => setTimeline(event.target.value)}
+            value={timeline}
+          >
+            <option>Exploring</option>
+            <option>This month</option>
+            <option>This quarter</option>
+            <option>Procurement / security review</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        <Label htmlFor="enterprise-message">What needs to stay private?</Label>
+        <textarea
+          className="min-h-32 w-full rounded-2xl border border-input bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-foreground shadow-none placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          id="enterprise-message"
+          onChange={(event) => setMessage(event.target.value)}
+          placeholder="Example: attorney-client calls, HR investigation interviews, board meeting audio, unreleased media..."
+          value={message}
+        />
+      </div>
+
+      <Button className="mt-6 w-full" disabled={status === "submitting"} size="lg" type="submit">
+        {status === "submitting" ? "Submitting" : "Request private deployment details"}
+      </Button>
+
+      {statusMessage ? (
+        <p className={cn("mt-4 text-sm", status === "error" ? "text-red-300" : "text-primary")}>{statusMessage}</p>
+      ) : null}
+    </form>
   );
 }
 

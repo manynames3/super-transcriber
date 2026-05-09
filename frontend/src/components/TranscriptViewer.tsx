@@ -93,6 +93,21 @@ export function TranscriptViewer({
               <FileJson2 className="h-4 w-4" />
               Download .json
             </Button>
+            {orderedAuditTrail.length > 0 ? (
+              <Button
+                onClick={() =>
+                  downloadBlob(
+                    JSON.stringify(orderedAuditTrail, null, 2),
+                    `transcript-${jobId}-audit.json`,
+                    "application/json;charset=utf-8",
+                  )
+                }
+                variant="outline"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                Audit .json
+              </Button>
+            ) : null}
           </div>
         </div>
       </CardHeader>

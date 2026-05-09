@@ -4,3 +4,13 @@ project_name        = "super-transcriber"
 allowed_origin      = "https://your-app.pages.dev"
 allowed_origins     = ["https://your-enterprise-app.pages.dev"]
 dynamodb_table_name = "super-transcriber"
+app_base_url        = "https://your-enterprise-app.pages.dev"
+
+# Optional Stripe billing. Leave blank to keep checkout disabled while free-plan limits still work.
+stripe_pro_price_id   = ""
+stripe_secret_key     = ""
+stripe_webhook_secret = ""
+
+# Private deployments can tune retention without changing Terraform code.
+upload_retention_days     = 3
+transcript_retention_days = 90

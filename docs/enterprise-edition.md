@@ -21,6 +21,9 @@ This codebase already contains the pieces that make the enterprise angle credibl
 - DynamoDB-backed job history instead of local-only state
 - explicit S3 lifecycle retention for uploads and transcripts
 - audit-friendly job lifecycle events on transcript detail pages
+- hosted plan status and usage enforcement backed by DynamoDB
+- optional Stripe Checkout and webhook processing for the Pro plan
+- enterprise lead capture without adding a paid CRM dependency
 - Terraform as the deployable infrastructure source of truth
 - a React product surface that can sell hosted and private-deployment plans from the same frontend
 
@@ -46,6 +49,7 @@ Value proposition:
 Charging model:
 
 - monthly subscription
+- Stripe Checkout when configured
 
 ### 2. Pro Team Workspace
 
@@ -127,6 +131,6 @@ If this project evolves further, the highest-leverage enterprise additions would
 
 1. Customer-managed KMS support for buckets and DynamoDB.
 2. Admin controls and exportable audit reports.
-3. Configurable retention policies instead of fixed 3-day and 90-day defaults.
-4. A private-deployment onboarding flow and sales CTA.
-5. Stripe or contract-backed billing to make the subscription ladder real instead of presentational.
+3. Admin UI for configurable retention instead of Terraform-only variables.
+4. Contract-backed private-deployment billing.
+5. Seat management for team accounts.

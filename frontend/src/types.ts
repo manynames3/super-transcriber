@@ -15,6 +15,8 @@ export interface AuditEvent {
   actor: "SYSTEM" | "USER";
   createdAt: string;
   eventType:
+    | "BILLING_CHECKOUT_STARTED"
+    | "BILLING_SUBSCRIPTION_UPDATED"
     | "JOB_CREATED"
     | "TRANSCRIBE_STARTED"
     | "TRANSCRIBE_RETRIED"
@@ -22,6 +24,27 @@ export interface AuditEvent {
     | "TRANSCRIBE_FAILED"
     | "JOB_SOFT_DELETED";
   message: string;
+}
+
+export interface BillingPlanLimits {
+  label: string;
+  maxDurationSeconds: number;
+  monthlyTranscriptLimit: number;
+  plan: "free" | "private" | "pro";
+}
+
+export interface BillingStatus {
+  currentPeriodEnd: string | null;
+  limits: BillingPlanLimits;
+  plan: "free" | "private" | "pro";
+  stripeConfigured: boolean;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  subscriptionStatus: string;
+  transcriptsRemaining: number;
+  transcriptsUsed: number;
+  updatedAt: string | null;
+  usagePeriod: string;
 }
 
 export interface JobSummary {
