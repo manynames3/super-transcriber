@@ -75,7 +75,7 @@ flowchart LR
 - Terraform zips the bundled outputs from `terraform/dist/` into `.artifacts/` and deploys the Lambda functions.
 - `frontend/` builds the static SPA with Vite.
 - `.github/workflows/deploy-frontend.yml` deploys the frontend to Cloudflare Pages.
-- `.github/workflows/deploy-aws.disabled.yml` is an optional AWS deploy workflow template that can be re-enabled after OIDC setup.
+- `docs/examples/deploy-aws.workflow.yml` is an optional AWS deploy workflow template that can be copied into `.github/workflows/` after OIDC setup.
 
 ## Key Constraints
 

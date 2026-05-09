@@ -168,13 +168,13 @@ npm run dev
 - Infrastructure is deployed from `terraform/`.
 - Lambda source is written in `cdk/lambda/` and bundled into `terraform/dist/` by `cdk/scripts/build-lambdas.mjs`.
 - The frontend is built with Vite and deployed to Cloudflare Pages.
-- The checked-in AWS GitHub Actions workflow is currently stored as `.github/workflows/deploy-aws.disabled.yml`. Rename it back to `.github/workflows/deploy-aws.yml` after configuring the OIDC role and repo variables if you want automated AWS deploys.
+- The optional AWS GitHub Actions workflow template is stored at `docs/examples/deploy-aws.workflow.yml`. It is intentionally kept outside `.github/workflows/` so GitHub does not execute it automatically in repos that deploy AWS locally.
 
 ## GitHub Actions
 
 ### AWS deploy workflow
 
-Template file: `.github/workflows/deploy-aws.disabled.yml`
+Template file: `docs/examples/deploy-aws.workflow.yml`
 
 Required secret:
 
