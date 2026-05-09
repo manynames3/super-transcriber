@@ -1,7 +1,13 @@
 import { Loader2, UploadCloud } from "lucide-react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { extractAudioDuration, estimateTranscribeCost, formatDuration, validateMp3File } from "../lib/audio";
+import {
+  extractAudioDuration,
+  estimateTranscribeCost,
+  formatDuration,
+  type AudioUploadMetadata,
+  validateAudioFile,
+} from "../lib/audio";
 import { apiRequest } from "../lib/api";
 import { useJobStore } from "../store/jobStore";
 import { Button } from "./ui/button";
@@ -9,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { ProgressBar } from "./ProgressBar";
 
 interface UploadUrlResponse {
+  fileExtension: "mp3" | "m4a";
   jobId: string;
   presignedUrl: string;
   s3Key: string;
@@ -21,6 +28,7 @@ interface UploadDropzoneProps {
 export function UploadDropzone({ onUploaded }: UploadDropzoneProps) {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [audioMetadata, setAudioMetadata] = useState<AudioUploadMetadata | null>(null);
   const [durationSeconds, setDurationSeconds] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -34,13 +42,14 @@ export function UploadDropzone({ onUploaded }: UploadDropzoneProps) {
     setIsSubmitting(false);
     setUploadProgress(0);
 
-    await validateMp3File(nextFile);
+    const metadata = await validateAudioFile(nextFile);
     const duration = await extractAudioDuration(nextFile);
 
     if (!Number.isFinite(duration) || duration <= 0) {
       throw new Error("Unable to determine the duration of this audio file.");
     }
 
+    setAudioMetadata(metadata);
     setFile(nextFile);
     setDurationSeconds(duration);
   };
@@ -54,6 +63,7 @@ export function UploadDropzone({ onUploaded }: UploadDropzoneProps) {
     try {
       await processFile(selected);
     } catch (uploadError) {
+      setAudioMetadata(null);
       setFile(null);
       setDurationSeconds(null);
       setError(uploadError instanceof Error ? uploadError.message : "Unable to read the selected file.");
@@ -64,7 +74,7 @@ export function UploadDropzone({ onUploaded }: UploadDropzoneProps) {
     new Promise<void>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("PUT", presignedUrl);
-      xhr.setRequestHeader("Content-Type", "audio/mpeg");
+      xhr.setRequestHeader("Content-Type", audioMetadata?.contentType || currentFile.type || "application/octet-stream");
 
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
@@ -85,8 +95,8 @@ export function UploadDropzone({ onUploaded }: UploadDropzoneProps) {
     });
 
   const handleSubmit = async () => {
-    if (!file || durationSeconds === null) {
-      setError("Select a valid MP3 file first.");
+    if (!file || !audioMetadata || durationSeconds === null) {
+      setError("Select a valid MP3 or M4A file first.");
       return;
     }
 
@@ -96,6 +106,9 @@ export function UploadDropzone({ onUploaded }: UploadDropzoneProps) {
 
       const uploadTarget = await apiRequest<UploadUrlResponse>("/upload-url", {
         method: "POST",
+        body: JSON.stringify({
+          fileExtension: audioMetadata.fileExtension,
+        }),
       });
 
       await uploadWithProgress(uploadTarget.presignedUrl, file);
@@ -125,7 +138,7 @@ export function UploadDropzone({ onUploaded }: UploadDropzoneProps) {
       <CardHeader className="border-b border-white/8 bg-transparent">
         <CardTitle>New transcription</CardTitle>
         <CardDescription>
-          MP3 only, 200MB max, direct-to-S3 upload. Duration is shown before you spend Transcribe minutes.
+          MP3 or M4A, 200MB max, direct-to-S3 upload. Duration is shown before you spend Transcribe minutes.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
@@ -158,14 +171,14 @@ export function UploadDropzone({ onUploaded }: UploadDropzoneProps) {
           <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(212,168,67,0.2)] bg-[rgba(212,168,67,0.1)]">
             <UploadCloud className="h-7 w-7 text-primary" />
           </div>
-          <p className="text-xl font-medium tracking-[-0.02em]">Drag an MP3 here or click to browse</p>
+          <p className="text-xl font-medium tracking-[-0.02em]">Drag an MP3 or M4A here or click to browse</p>
           <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-            The browser validates the MP3 header, file size, and duration before any network call.
+            The browser validates the audio header, file size, and duration before any network call.
           </p>
         </button>
 
         <input
-          accept=".mp3,audio/mpeg"
+          accept=".mp3,.m4a,audio/mpeg,audio/mp4,audio/x-m4a,audio/m4a"
           className="hidden"
           onChange={(event) => void handleFiles(event.target.files)}
           ref={inputRef}

@@ -99,7 +99,7 @@ const comparisonRows = [
 const faqs = [
   {
     answer:
-      "Currently MP3 files only. WAV, M4A, and MP4 audio-track support can be added later without changing the current backend flow.",
+      "Upload MP3 or M4A audio now. WAV and broader container support can be added later without changing the current backend shape.",
     question: "What audio formats do you support?",
   },
   {
@@ -119,7 +119,7 @@ const faqs = [
   },
   {
     answer:
-      "The original MP3 is automatically deleted after 3 days. Transcript JSON is retained for 90 days and remains accessible from the dashboard during that window.",
+      "The original upload is automatically deleted after 3 days. Transcript JSON is retained for 90 days and remains accessible from the dashboard during that window.",
     question: "Do my uploads expire?",
   },
   {
@@ -256,7 +256,7 @@ export function LandingPage() {
                 in seconds.
               </h1>
               <p className="hero-copy mt-5 text-center lg:text-left">
-                Upload an MP3. Get a clean, speaker-labeled transcript you can copy, download, or share, powered by Amazon&apos;s speech stack and packaged like a real product.
+                Upload an MP3 or M4A. Get a clean, speaker-labeled transcript you can copy, download, or share, powered by Amazon&apos;s speech stack and packaged like a real product.
               </p>
               <div className="mt-7 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
                 <Link className={cn(buttonVariants({ size: "lg" }), "px-8")} to={ctaHref}>
@@ -340,7 +340,7 @@ export function LandingPage() {
               description="Drag your audio file into the upload zone or click to browse. We show duration and estimated cost before submission."
               icon={<UploadGlyph />}
               number="01"
-              title="Upload your MP3"
+              title="Upload your audio"
             />
             <StepCard
               description="Amazon Transcribe analyzes the audio with speaker diarization. Most files finish in under two minutes."

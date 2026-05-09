@@ -78,10 +78,10 @@ export function DashboardPage() {
           <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:items-end">
             <div className="space-y-5">
               <h1 className="hero-title">
-                Low-cost MP3 <em>transcription</em> without the platform bloat.
+                Low-cost audio <em>transcription</em> without the platform bloat.
               </h1>
               <p className="hero-copy">
-                Upload an MP3, see the duration before you spend Transcribe minutes, then track a diarized transcript all the way through copy and export.
+                Upload an MP3 or M4A, see the duration before you spend Transcribe minutes, then track a diarized transcript all the way through copy and export.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">

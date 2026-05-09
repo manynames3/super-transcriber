@@ -25,7 +25,7 @@ flowchart LR
         deleteFn["Container\nJob Delete Lambda\nSoft delete"]
         completionFn["Container\nCompletion Lambda\nPersists transcript JSON and final status"]
         jobs["Container\nDynamoDB\nSingle table for per-user jobs"]
-        uploads["Container\nS3 uploads bucket\nPrivate MP3 storage"]
+        uploads["Container\nS3 uploads bucket\nPrivate audio storage"]
         transcripts["Container\nS3 transcripts bucket\nPrivate transcript JSON storage"]
         transcribe["Container\nAmazon Transcribe\nAsync batch transcription"]
         events["Container\nEventBridge\nTranscribe completion events"]
@@ -60,8 +60,8 @@ flowchart LR
 
 1. The user registers or signs in against Cognito from the custom React forms.
 2. The SPA stores the access, ID, and refresh tokens in Zustand memory and sends the access token to the HTTP API as a bearer token.
-3. `POST /upload-url` checks the active-job cap in DynamoDB, generates a ULID-based job ID, and returns a presigned `PUT` URL for `uploads/{userId}/{jobId}/audio.mp3`.
-4. The browser uploads the MP3 directly to S3 with XHR progress reporting.
+3. `POST /upload-url` checks the active-job cap in DynamoDB, generates a ULID-based job ID, and returns a presigned `PUT` URL for `uploads/{userId}/{jobId}/audio.{ext}`.
+4. The browser uploads the MP3 or M4A file directly to S3 with XHR progress reporting.
 5. `POST /transcribe` validates S3 key ownership, starts an async Amazon Transcribe job, and creates or updates the DynamoDB job record.
 6. The transcript page polls `GET /job/{jobId}` with exponential backoff. While the job is pending, the API can ask Amazon Transcribe for the live status.
 7. When Transcribe emits a completion event, EventBridge triggers the completion Lambda, which downloads the raw transcript JSON, stores it in the transcript bucket, and updates DynamoDB with final status and word count.
@@ -80,7 +80,7 @@ flowchart LR
 ## Key Constraints
 
 - Cost-first architecture: HTTP API, `arm64` Lambdas, DynamoDB `PAY_PER_REQUEST`, no VPC, no NAT Gateway, and S3 lifecycle cleanup.
-- MP3-only ingestion with client-side extension, file-header, file-size, and duration validation.
+- MP3 and M4A ingestion with client-side extension, file-header, file-size, and duration validation.
 - Tokens are intentionally kept in memory only; no localStorage, sessionStorage, or cookies are used for Cognito session state.
 - The product is tuned for personal-scale traffic: active jobs are capped at 5 per user and job listings are paged.
 - Speaker diarization is currently configured for two speakers in the request path and UI.

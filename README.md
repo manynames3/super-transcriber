@@ -1,6 +1,6 @@
 # Super Transcriber
 
-Super Transcriber is a cost-first transcription web app that lets authenticated users upload MP3s, send them through Amazon Transcribe, and review or export speaker-labeled transcripts from a polished React dashboard. The repository demonstrates a full-stack serverless build: custom Cognito auth, direct browser-to-S3 uploads, a Lambda + DynamoDB API, an EventBridge-driven completion pipeline, Terraform-managed AWS infrastructure, and Cloudflare Pages frontend hosting.
+Super Transcriber is a cost-first transcription web app that lets authenticated users upload MP3 or M4A audio, send it through Amazon Transcribe, and review or export speaker-labeled transcripts from a polished React dashboard. The repository demonstrates a full-stack serverless build: custom Cognito auth, direct browser-to-S3 uploads, a Lambda + DynamoDB API, an EventBridge-driven completion pipeline, Terraform-managed AWS infrastructure, and Cloudflare Pages frontend hosting.
 
 - **Live demo:** [super-transcriber.pages.dev](https://super-transcriber.pages.dev)
 - **Architecture docs:** [docs/architecture.md](docs/architecture.md)
@@ -11,7 +11,7 @@ Super Transcriber is a cost-first transcription web app that lets authenticated 
 - Built as a personal-scale SaaS-style product rather than a toy demo: landing page, auth, dashboard, job history, transcript viewer, and deployment workflows are all included.
 - Uses a custom Cognito login, registration, and email verification flow instead of Cognito Hosted UI.
 - Keeps cloud cost constraints explicit in the architecture: HTTP API over REST, Lambda on `arm64`, DynamoDB on-demand, S3 lifecycle cleanup, and no VPC or NAT.
-- Shows practical client and backend engineering details such as MP3 header validation, duration-based cost preview, retryable polling, presigned uploads, and soft-delete job history.
+- Shows practical client and backend engineering details such as client-side audio header validation, duration-based cost preview, retryable polling, presigned uploads, and soft-delete job history.
 
 ## Tech Stack
 
@@ -30,10 +30,10 @@ Super Transcriber is a cost-first transcription web app that lets authenticated 
 
 ## Engineering Highlights
 
-- Direct-to-S3 upload path: the browser requests a presigned `PUT` URL, uploads the MP3 directly with progress reporting, then starts transcription without proxying file bytes through Lambda.
+- Direct-to-S3 upload path: the browser requests a presigned `PUT` URL, uploads MP3 or M4A audio directly with progress reporting, then starts transcription without proxying file bytes through Lambda.
 - Event-driven completion pipeline: Amazon Transcribe emits completion events, EventBridge triggers a completion Lambda, the Lambda stores the raw transcript JSON in S3, and DynamoDB is updated with final status and word count.
 - Custom auth without persistent browser token storage: access, ID, and refresh tokens live only in Zustand memory, and the fetch wrapper retries exactly once after a `401` by refreshing the session through Cognito.
-- Cost-aware UX: the client validates the `.mp3` extension and header bytes, enforces a 200 MB limit, extracts duration with the Web Audio API, and estimates variable Amazon Transcribe cost before submission.
+- Cost-aware UX: the client validates `.mp3` and `.m4a` extensions plus header bytes, enforces a 200 MB limit, extracts duration with the Web Audio API, and estimates variable Amazon Transcribe cost before submission.
 - Transcript-focused product UX: polling uses exponential backoff, diarized text is reformatted into speaker sections, large transcripts paginate into 2,500-word chunks, and users can copy or download `.txt` and raw `.json` output.
 
 ## Architecture
@@ -68,7 +68,7 @@ frontend/   React 18 + Vite single-page app
 
 ## Limitations
 
-- MP3-only input in the current product flow.
+- Input is currently limited to MP3 and M4A files.
 - Speaker diarization is currently fixed to two speakers in the UI and transcription request path.
 - The app is intentionally tuned for low traffic: active jobs are capped at 5 per user and job listing pagination is capped at 20 per request.
 - The deployed AWS account must have Amazon Transcribe enabled; some accounts may require separate service activation before jobs can run.

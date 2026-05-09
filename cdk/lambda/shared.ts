@@ -1,6 +1,9 @@
 import type { APIGatewayProxyEventV2, APIGatewayProxyEventV2WithJWTAuthorizer } from "aws-lambda";
 
 export const ULID_REGEX = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+export const SUPPORTED_AUDIO_EXTENSIONS = ["mp3", "m4a"] as const;
+
+export type SupportedAudioExtension = (typeof SUPPORTED_AUDIO_EXTENSIONS)[number];
 
 export interface ErrorBody {
   success: false;
@@ -51,21 +54,66 @@ export function isValidJobId(jobId: string): boolean {
 }
 
 export function isOwnedUploadKey(userId: string, s3Key: string): boolean {
-  return s3Key === `uploads/${userId}/${extractJobIdFromS3Key(s3Key) ?? ""}/audio.mp3`;
+  const details = extractAudioObjectDetailsFromS3Key(s3Key);
+  if (!details) {
+    return false;
+  }
+
+  return s3Key === buildUploadS3Key(userId, details.jobId, details.fileExtension);
 }
 
 export function extractJobIdFromS3Key(s3Key: string): string | null {
+  return extractAudioObjectDetailsFromS3Key(s3Key)?.jobId ?? null;
+}
+
+export function buildUploadS3Key(
+  userId: string,
+  jobId: string,
+  fileExtension: SupportedAudioExtension,
+): string {
+  return `uploads/${userId}/${jobId}/audio.${fileExtension}`;
+}
+
+export function normalizeSupportedAudioExtension(
+  value: string | null | undefined,
+): SupportedAudioExtension | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase().replace(/^\./, "");
+  return isSupportedAudioExtension(normalized) ? normalized : null;
+}
+
+export function mediaFormatFromExtension(fileExtension: SupportedAudioExtension): "mp3" | "mp4" {
+  return fileExtension === "m4a" ? "mp4" : "mp3";
+}
+
+export function extractAudioObjectDetailsFromS3Key(s3Key: string): {
+  fileExtension: SupportedAudioExtension;
+  jobId: string;
+  mediaFormat: "mp3" | "mp4";
+} | null {
   const parts = s3Key.split("/");
   if (parts.length !== 4) {
     return null;
   }
 
-  if (parts[0] !== "uploads" || parts[3] !== "audio.mp3") {
+  if (parts[0] !== "uploads") {
     return null;
   }
 
-  const [, , jobId] = parts;
-  return isValidJobId(jobId) ? jobId : null;
+  const [, , jobId, fileName] = parts;
+  const fileExtension = fileName === "audio.mp3" ? "mp3" : fileName === "audio.m4a" ? "m4a" : null;
+  if (!fileExtension || !isValidJobId(jobId)) {
+    return null;
+  }
+
+  return {
+    fileExtension,
+    jobId,
+    mediaFormat: mediaFormatFromExtension(fileExtension),
+  };
 }
 
 export function formatDurationSeconds(durationSeconds: number): number {
@@ -157,4 +205,8 @@ function speakerLabelToNumber(label: string): number {
   const numericPart = label.replace("spk_", "");
   const parsed = Number.parseInt(numericPart, 10);
   return Number.isFinite(parsed) ? parsed + 1 : 1;
+}
+
+function isSupportedAudioExtension(value: string): value is SupportedAudioExtension {
+  return (SUPPORTED_AUDIO_EXTENSIONS as readonly string[]).includes(value);
 }

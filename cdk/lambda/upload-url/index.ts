@@ -4,7 +4,18 @@ import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { APIGatewayProxyHandlerV2 } from "aws-lambda";
 import { ulid } from "ulid";
-import { errorResponse, getUserId, jsonResponse } from "../shared";
+import {
+  buildUploadS3Key,
+  errorResponse,
+  getUserId,
+  jsonResponse,
+  normalizeSupportedAudioExtension,
+  parseJsonBody,
+} from "../shared";
+
+interface UploadUrlBody {
+  fileExtension?: string;
+}
 
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const s3 = new S3Client({});
@@ -20,6 +31,12 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     const userId = getUserId(event);
     if (!userId) {
       return errorResponse(401, "UNAUTHORIZED", "Unable to resolve the authenticated user.");
+    }
+
+    const body = parseJsonBody<UploadUrlBody>(event.body);
+    const fileExtension = normalizeSupportedAudioExtension(body?.fileExtension);
+    if (!fileExtension) {
+      return errorResponse(400, "INVALID_FILE_EXTENSION", "fileExtension must be mp3 or m4a.");
     }
 
     const activeJobs = await dynamo.send(
@@ -45,18 +62,18 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     }
 
     const jobId = ulid();
-    const s3Key = `uploads/${userId}/${jobId}/audio.mp3`;
+    const s3Key = buildUploadS3Key(userId, jobId, fileExtension);
     const presignedUrl = await getSignedUrl(
       s3,
       new PutObjectCommand({
         Bucket: uploadBucketName,
-        ContentType: "audio/mpeg",
         Key: s3Key,
       }),
       { expiresIn: 900 },
     );
 
     return jsonResponse(200, {
+      fileExtension,
       jobId,
       presignedUrl,
       s3Key,

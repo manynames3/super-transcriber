@@ -41,7 +41,7 @@ export function LoginPage() {
   return (
     <AuthShell
       eyebrow="Secure login"
-      subtitle="Sign in with your Cognito account to upload MP3s, track job progress, and export diarized transcripts in the same premium workspace."
+      subtitle="Sign in with your Cognito account to upload MP3 or M4A audio, track job progress, and export diarized transcripts in the same premium workspace."
       title={
         <>
           Turn raw audio into <em>finished text</em>.

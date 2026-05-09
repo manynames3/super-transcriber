@@ -12,6 +12,7 @@ import {
 import type { APIGatewayProxyHandlerV2 } from "aws-lambda";
 import {
   errorResponse,
+  extractAudioObjectDetailsFromS3Key,
   extractJobIdFromS3Key,
   formatDurationSeconds,
   getUserId,
@@ -57,6 +58,11 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       return errorResponse(400, "INVALID_JOB_ID", "The S3 key does not contain a valid job ID.");
     }
 
+    const audioObjectDetails = extractAudioObjectDetailsFromS3Key(body.s3Key);
+    if (!audioObjectDetails) {
+      return errorResponse(400, "INVALID_MEDIA_FORMAT", "Only mp3 and m4a uploads are supported.");
+    }
+
     const speakerCount = body.speakerCount === 2 ? 2 : 2;
     const durationSeconds = formatDurationSeconds(body.durationSeconds ?? 0);
     const timestamp = Date.now();
@@ -94,7 +100,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         Media: {
           MediaFileUri: `s3://${uploadBucketName}/${body.s3Key}`,
         },
-        MediaFormat: "mp3",
+        MediaFormat: audioObjectDetails.mediaFormat,
         Settings: {
           MaxSpeakerLabels: speakerCount,
           ShowSpeakerLabels: true,
