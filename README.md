@@ -1,58 +1,52 @@
 # Super Transcriber
 
-Super Transcriber is a transcription product and deployable AWS stack for teams that want a cleaner data boundary than generic AI chat or meeting-bot tools. Users can upload MP3 or M4A audio, run it through Amazon Transcribe, and review speaker-labeled transcripts in a polished React workspace. The same codebase also supports a stronger v2 positioning: start as a hosted subscription, then move the stack into a customer-owned AWS account when security, procurement, or retention policy requires it.
+Super Transcriber is a cost-aware transcription web app and deployable AWS serverless stack. Authenticated users upload MP3 or M4A audio, the browser sends the file directly to private S3, Amazon Transcribe processes it asynchronously, and the app returns a speaker-labeled transcript with copy/download actions.
 
 - **Live demo:** [super-transcriber.pages.dev](https://super-transcriber.pages.dev)
 - **Enterprise frontend:** [super-transcriber-ent.pages.dev](https://super-transcriber-ent.pages.dev)
 - **Architecture docs:** [docs/architecture.md](docs/architecture.md)
+- **Validation evidence:** [docs/validation-evidence.md](docs/validation-evidence.md)
 - **ADRs:** [docs/adrs/README.md](docs/adrs/README.md)
 - **Enterprise edition notes:** [docs/enterprise-edition.md](docs/enterprise-edition.md)
 - **Private deployment guide:** [docs/private-deployment.md](docs/private-deployment.md)
 - **Security notes:** [docs/security.md](docs/security.md)
 
-## Backstory
-
-This project started from a simple question: why not just drag a voicemail into a general AI chat and ask for a transcription? In practice, that workflow was unreliable. File handling, sandbox restrictions, model-access issues, and opaque tool routing all got in the way, especially for real-world `.m4a` voicemail attachments.
-
-Super Transcriber exists to make that path deterministic: upload the file, validate it in the browser, send it through a known transcription pipeline, and get back structured output you can actually use.
-
-**Example failure modes from general-purpose AI tools**
-
-ChatGPT routed the request through the wrong tool path instead of producing a usable transcript:
-
-![ChatGPT voicemail transcription failure](docs/images/backstory-chatgpt.png)
-
-Claude identified a possible transcription path, but the sandbox and external model access still blocked the task:
-
-![Claude voicemail transcription failure](docs/images/backstory-claude.png)
-
-## Enterprise Edition Direction
-
-The v2 product direction is not "more AI features for the sake of it." It is a stronger packaging of the architecture already in this repo:
-
-- **Hosted workspace:** start as a self-serve subscription with auth, upload, transcript history, and exports.
-- **Private deployment:** deploy the same Terraform-managed stack into a customer-owned AWS account so the buckets, user pool, and job metadata live inside their environment.
-- **Commercial ladder:** use the hosted product for fast adoption, then sell private deployment and implementation support to teams that care where the audio and transcripts live.
-- **Audit visibility:** expose job lifecycle events so teams can see when jobs were created, retried, completed, failed, or soft-deleted.
-- **Subscription controls:** enforce free/pro usage limits in Lambda, with Stripe Checkout and webhook hooks ready when Stripe secrets are configured.
-
-That angle makes the differentiation less about generic "AI transcription" and more about explicit uploads, defined retention, and a customer-controlled data boundary.
-
 ## About
 
-- Built as a product surface rather than a toy demo: landing page, auth, dashboard, job history, transcript viewer, and deployment workflows are all included.
-- Supports both a hosted SaaS-style product story and a private-deployment enterprise story using the same AWS stack and frontend.
-- Uses a custom Cognito login, registration, and email verification flow instead of Cognito Hosted UI.
-- Keeps cloud cost constraints explicit in the architecture: HTTP API over REST, Lambda on `arm64`, DynamoDB on-demand, S3 lifecycle cleanup, and no VPC or NAT.
-- Shows practical client and backend engineering details such as client-side audio header validation, duration-based cost preview, retryable polling, presigned uploads, and soft-delete job history.
+- **What it proves:** AWS serverless architecture, Terraform IaC, secure auth, direct-to-S3 upload design, async event processing, cost controls, and deployment documentation.
+- **What it is not claiming:** production traffic, enterprise customers, or fully automated AWS deployment from GitHub Actions.
+- **Deployment model:** frontend deployment is manual through GitHub Actions/Cloudflare credentials; AWS deployment is Terraform-managed and intentionally manual unless GitHub OIDC is configured.
+- **Product direction:** a hosted subscription app with a private-deployment path for customers that want audio, transcripts, identity, and metadata inside their own AWS account.
 
+## AWS Architecture
 
-## Why This Exists
+The backend uses AWS managed services without a VPC or fixed-cost infrastructure:
 
-My dad was heading out on a camping trip. I ordered him a large battery bank from Amazon. Plenty of time to arrive, or so I thought.
-The package carrier left a voicemail instead of the package. No notice label on the door. No delivery in the mailroom like every other carrier does. Just a voicemail with a callback number buried in a slurry and hurried repertoire speech.
+1. Cognito authenticates users through custom React forms.
+2. API Gateway HTTP API validates JWTs with a Cognito authorizer.
+3. Lambda returns a presigned S3 `PUT` URL after validating user/job limits.
+4. The browser uploads audio directly to a private S3 uploads bucket.
+5. Lambda starts an async Amazon Transcribe job and records status in DynamoDB.
+6. EventBridge receives the Transcribe state-change event and triggers the completion Lambda.
+7. The completion Lambda stores raw transcript JSON in S3 and updates the DynamoDB job item.
+8. The transcript page polls the API and renders speaker-labeled text with copy and export actions.
 
-Amazon support couldn't help. No time to reorder. I just needed to hear that phone number clearly. I pulled up ChatGPT. Then Claude. Both started walking me through installing dependencies, downloading scripts, trying different approaches. A couple minutes in, still nothing working. My dad's trip wasn't going to wait. So inspired by that problem, I built this. You drag in an audio file. You get a transcript in seconds. Done.
+See [docs/architecture.md](docs/architecture.md) for the C4-style Mermaid diagram and runtime flow.
+
+## Cloud Architecture Evidence
+
+The repo includes implementation and documentation evidence for the cloud pipeline:
+
+- Cognito custom auth, registration, email verification, and token refresh flow.
+- Presigned private S3 upload flow with browser-side progress reporting.
+- Amazon Transcribe async job creation with speaker diarization.
+- EventBridge completion rule and Lambda completion handler.
+- DynamoDB single-table job, billing, usage, and audit-event records.
+- Private transcript JSON storage in S3.
+- Cloudflare Pages deployment workflow for the static React app.
+- Terraform-managed API Gateway, Lambda, S3, DynamoDB, Cognito, and EventBridge resources.
+
+The capture checklist for screenshots/logs is in [docs/validation-evidence.md](docs/validation-evidence.md).
 
 
 ## Tech Stack
@@ -68,7 +62,7 @@ Amazon support couldn't help. No time to reorder. I just needed to hear that pho
 | Eventing | Amazon EventBridge |
 | Infrastructure | Terraform for deployable infrastructure, CDK TypeScript used for Lambda source and bundling |
 | Hosting | Cloudflare Pages |
-| CI/CD | GitHub Actions, Cloudflare Wrangler, optional AWS OIDC workflow |
+| CI/CD | GitHub Actions CI, manual Cloudflare deploy workflows, optional AWS OIDC workflow template |
 | Billing | Stripe Checkout + webhooks, optional configuration with no fixed platform dependency |
 
 ## Engineering Highlights
@@ -82,11 +76,52 @@ Amazon support couldn't help. No time to reorder. I just needed to hear that pho
 - Subscription-ready backend: plan status, usage tracking, Stripe Checkout, Stripe webhook processing, and Lambda-side plan enforcement are implemented without adding another database.
 - Enterprise lead capture: private-deployment inquiries are stored in DynamoDB through a public API route instead of relying on a mailto link or paid CRM.
 
+## CI and Deployment Status
+
+- `.github/workflows/ci.yml` runs on push and pull request. It builds the frontend, builds and bundles Lambda TypeScript, checks Terraform formatting, initializes Terraform without the remote backend, validates Terraform, and sanity-checks workflow YAML.
+- `.github/workflows/deploy-frontend.yml` is manual-only and deploys the hosted frontend to Cloudflare Pages when `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and Vite build variables are configured.
+- `.github/workflows/deploy-enterprise-frontend.yml` is manual-only and deploys the enterprise positioning frontend to the separate `super-transcriber-ent` Cloudflare Pages project.
+- `docs/examples/deploy-aws.workflow.yml` is an optional Terraform AWS deploy workflow template. It is intentionally not active by default because it requires a GitHub OIDC role and Terraform state backend variables.
+
+## Cost and Security Controls
+
+- HTTP API is used instead of REST API for lower request cost.
+- Lambda functions use Node.js 20 on `arm64`.
+- DynamoDB uses on-demand billing.
+- S3 lifecycle rules expire uploads and transcript artifacts.
+- No Lambda runs in a VPC, avoiding NAT Gateway cost.
+- S3 buckets are private and accessed by presigned URLs or Lambda IAM permissions.
+- Cognito tokens are kept in memory only by the frontend.
+- API Gateway CORS and S3 CORS are scoped to configured Cloudflare Pages origins.
+
+## Enterprise Edition Direction
+
+The v2 product direction is a stronger packaging of the architecture already in this repo:
+
+- **Hosted workspace:** start as a self-serve subscription with auth, upload, transcript history, and exports.
+- **Private deployment:** deploy the same Terraform-managed stack into a customer-owned AWS account so buckets, user pool, and job metadata live inside their environment.
+- **Commercial ladder:** use the hosted product for fast adoption, then sell private deployment and implementation support to teams that care where audio and transcripts live.
+- **Audit visibility:** expose job lifecycle events so teams can see when jobs were created, retried, completed, failed, or soft-deleted.
+- **Subscription controls:** enforce free/pro usage limits in Lambda, with Stripe Checkout and webhook hooks ready when Stripe secrets are configured.
+
+## Origin Story
+
+This started from a practical failure: a voicemail had the callback number needed to solve a delivery problem, but generic AI chat tools could not reliably transcribe the `.m4a` attachment in time. Super Transcriber turns that path into a deterministic workflow: upload the audio, validate it, run it through a known AWS transcription pipeline, and get structured output back.
+
+ChatGPT understood the request, but routed the file through a tool path that could not access the audio content:
+
+![ChatGPT M4A transcription tool-routing failure](docs/images/backstory-chatgpt-m4a-tool-routing-failure.png)
+
+Claude identified the file as M4A and tried several local transcription paths, but sandbox and external model-download restrictions still blocked the final transcript:
+
+![Claude M4A transcription sandbox failure](docs/images/backstory-claude-m4a-sandbox-failure.png)
+
 ## Architecture
 
 The system is split between a static frontend on Cloudflare Pages and a serverless AWS backend. Terraform is the deployable infrastructure source of truth. Lambda handler source lives in `cdk/lambda/`, and an esbuild bundling script writes deployable artifacts into `terraform/dist/` for Terraform packaging.
 
 - High-level architecture: [docs/architecture.md](docs/architecture.md)
+- Validation evidence checklist: [docs/validation-evidence.md](docs/validation-evidence.md)
 - Architectural decisions: [docs/adrs/README.md](docs/adrs/README.md)
 - Private deployment guide: [docs/private-deployment.md](docs/private-deployment.md)
 - Security and privacy notes: [docs/security.md](docs/security.md)
@@ -215,7 +250,6 @@ Copy `frontend/.env.example` to `frontend/.env` and fill it from Terraform outpu
 
 ```env
 VITE_API_BASE_URL=...
-VITE_COGNITO_USER_POOL_ID=...
 VITE_COGNITO_CLIENT_ID=...
 VITE_AWS_REGION=us-east-1
 ```
@@ -229,10 +263,10 @@ npm run dev
 
 ## Deployment Model
 
-- Infrastructure is deployed from `terraform/`.
+- Infrastructure is deployed from `terraform/`; AWS deployment is manual unless you configure the optional GitHub OIDC workflow template.
 - Lambda source is written in `cdk/lambda/` and bundled into `terraform/dist/` by `cdk/scripts/build-lambdas.mjs`.
-- The frontend is built with Vite and deployed to Cloudflare Pages.
-- The optional AWS GitHub Actions workflow template is stored at `docs/examples/deploy-aws.workflow.yml`. It is intentionally kept outside `.github/workflows/` so GitHub does not execute it automatically in repos that deploy AWS locally.
+- The frontend is built with Vite and deployed to Cloudflare Pages through manual GitHub Actions workflows.
+- The optional AWS GitHub Actions workflow template is stored at `docs/examples/deploy-aws.workflow.yml`. It is intentionally kept outside `.github/workflows/` so GitHub does not execute AWS changes automatically in repos that deploy AWS locally.
 
 ## GitHub Actions
 
@@ -270,7 +304,6 @@ Required secrets:
 Required repository variables:
 
 - `VITE_API_BASE_URL`
-- `VITE_COGNITO_USER_POOL_ID`
 - `VITE_COGNITO_CLIENT_ID`
 - `VITE_AWS_REGION`
 
@@ -278,7 +311,7 @@ Required repository variables:
 
 File: `.github/workflows/deploy-enterprise-frontend.yml`
 
-This workflow runs from the `codex/enterprise-v2` branch and deploys the enterprise landing page to the separate Cloudflare Pages project `super-transcriber-ent`.
+This manual workflow deploys the enterprise landing page to the separate Cloudflare Pages project `super-transcriber-ent`.
 
 It uses the same GitHub secrets and repository variables as the hosted frontend workflow.
 

@@ -1,9 +1,9 @@
 name: Deploy AWS
 
+# Optional template. Copy this file into .github/workflows/ only after
+# configuring the GitHub OIDC role and Terraform state backend variables.
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: read

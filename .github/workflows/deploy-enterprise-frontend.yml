@@ -1,9 +1,9 @@
 name: Deploy Enterprise Frontend
 
+# Manual by design: normal pushes run CI, while deployment requires configured
+# Cloudflare secrets and Vite build variables.
 on:
-  push:
-    branches:
-      - codex/enterprise-v2
+  workflow_dispatch:
 
 permissions:
   contents: read

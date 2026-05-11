@@ -83,7 +83,6 @@ terraform output -raw aws_region
 
 ```text
 VITE_API_BASE_URL
-VITE_COGNITO_USER_POOL_ID
 VITE_COGNITO_CLIENT_ID
 VITE_AWS_REGION
 ```

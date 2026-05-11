@@ -9,6 +9,10 @@ Super Transcriber is a split deployment:
 
 The design is intentionally biased toward low fixed cost and simple operations. The frontend handles auth, upload UX, polling, and transcript export. AWS handles identity, file storage, async transcription, job state, and transcript persistence.
 
+## Validation Status
+
+The repo is structured to demonstrate a complete AWS transcription pipeline, but it does not claim production traffic or enterprise customer usage. Evidence to capture for reviews is tracked in [validation-evidence.md](validation-evidence.md), including Cognito auth, presigned S3 uploads, Transcribe jobs, EventBridge completion, DynamoDB status tracking, transcript storage, and Cloudflare Pages deployment.
+
 ## C4-Style Container Diagram
 
 ```mermaid
@@ -91,9 +95,10 @@ flowchart LR
 - `cdk/scripts/build-lambdas.mjs` bundles those handlers with esbuild into `terraform/dist/`.
 - Terraform zips the bundled outputs from `terraform/dist/` into `.artifacts/` and deploys the Lambda functions.
 - `frontend/` builds the static SPA with Vite.
-- `.github/workflows/deploy-frontend.yml` deploys the frontend to Cloudflare Pages.
-- `.github/workflows/deploy-enterprise-frontend.yml` deploys the enterprise v2 frontend from `codex/enterprise-v2` to the separate `super-transcriber-ent` Cloudflare Pages project.
-- `docs/examples/deploy-aws.workflow.yml` is an optional AWS deploy workflow template that can be copied into `.github/workflows/` after OIDC setup.
+- `.github/workflows/ci.yml` runs reliable validation on push and pull request.
+- `.github/workflows/deploy-frontend.yml` manually deploys the hosted frontend to Cloudflare Pages when Cloudflare secrets and Vite variables are configured.
+- `.github/workflows/deploy-enterprise-frontend.yml` manually deploys the enterprise v2 frontend to the separate `super-transcriber-ent` Cloudflare Pages project.
+- `docs/examples/deploy-aws.workflow.yml` is an optional manual AWS deploy workflow template that can be copied into `.github/workflows/` after OIDC setup.
 
 ## Key Constraints
 
